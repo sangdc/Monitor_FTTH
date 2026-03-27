@@ -4,8 +4,11 @@ function renderHeader($currentUser, $activeMenu = 'dashboard') {
         'dashboard' => ['icon' => 'fa-chart-line', 'label' => 'Dashboard'],
         'lines' => ['icon' => 'fa-network-wired', 'label' => 'FTTH Lines'],
         'customers' => ['icon' => 'fa-building', 'label' => 'Khách hàng'],
-        'settings' => ['icon' => 'fa-cog', 'label' => 'Cài đặt'],
     ];
+    if (($currentUser['role'] ?? '') === 'admin') {
+        $menuItems['users'] = ['icon' => 'fa-users-cog', 'label' => 'Users'];
+        $menuItems['settings'] = ['icon' => 'fa-cog', 'label' => 'Cài đặt'];
+    }
 ?>
 <!DOCTYPE html>
 <html lang="vi">

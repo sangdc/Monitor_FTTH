@@ -155,14 +155,25 @@ switch ($action) {
         include 'views/dashboard.php';
         break;
 
-    // ---- Settings ----
+    // ---- Settings (Admin only) ----
     case 'settings':
-        $settings = $setting->getAll();
-        include 'views/settings.php';
-        break;
-
     case 'save_settings':
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    case 'users':
+    case 'save_user':
+    case 'toggle_user':
+        if ($currentUser['role'] !== 'admin') {
+            $_SESSION['error_message'] = 'Bạn không có quyền truy cập!';
+            header('Location: ?action=dashboard');
+            exit;
+        }
+
+        if ($action === 'settings') {
+            $settings = $setting->getAll();
+            include 'views/settings.php';
+            break;
+        }
+
+        if ($action === 'save_settings' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $setting->saveMultiple([
                 'ping_interval' => max(5, intval($_POST['ping_interval'] ?? 30)),
                 'telegram_enabled' => $_POST['telegram_enabled'] ?? '0',
@@ -171,9 +182,64 @@ switch ($action) {
                 'timezone' => $_POST['timezone'] ?? 'Asia/Ho_Chi_Minh'
             ]);
             $_SESSION['success_message'] = 'Cài đặt đã được lưu!';
+            header('Location: ?action=settings');
+            exit;
         }
-        header('Location: ?action=settings');
-        exit;
+
+        if ($action === 'users') {
+            $users_list = $user->getAll();
+            include 'views/users.php';
+            break;
+        }
+
+        if ($action === 'save_user' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+            $id = $_POST['id'] ?? null;
+            if ($id) {
+                // Update existing user
+                $user->update($id, [
+                    'name' => $_POST['name'],
+                    'email' => $_POST['email'] ?? null,
+                    'role' => $_POST['role'] ?? 'viewer'
+                ]);
+                // Update password if provided
+                if (!empty($_POST['password'])) {
+                    $user->setPassword($id, $_POST['password']);
+                }
+                $_SESSION['success_message'] = 'Cập nhật user thành công!';
+            } else {
+                // Create new user
+                if (empty($_POST['username']) || empty($_POST['password'])) {
+                    $_SESSION['error_message'] = 'Username và mật khẩu là bắt buộc!';
+                } else {
+                    try {
+                        $user->create([
+                            'username' => $_POST['username'],
+                            'name' => $_POST['name'],
+                            'email' => $_POST['email'] ?? null,
+                            'password' => $_POST['password'],
+                            'role' => $_POST['role'] ?? 'viewer'
+                        ]);
+                        $_SESSION['success_message'] = 'Tạo user thành công!';
+                    } catch (PDOException $e) {
+                        $_SESSION['error_message'] = 'Username đã tồn tại!';
+                    }
+                }
+            }
+            header('Location: ?action=users');
+            exit;
+        }
+
+        if ($action === 'toggle_user') {
+            $id = $_GET['id'] ?? null;
+            $active = $_GET['active'] ?? 1;
+            if ($id) {
+                $user->toggleActive($id, $active);
+                $_SESSION['success_message'] = $active ? 'Đã kích hoạt user!' : 'Đã vô hiệu hóa user!';
+            }
+            header('Location: ?action=users');
+            exit;
+        }
+        break;
 
     case 'change_password':
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
