@@ -41,18 +41,54 @@ CREATE TABLE IF NOT EXISTS `user_permissions` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =============================================
+-- Customers
+-- =============================================
+CREATE TABLE IF NOT EXISTS `customers` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(150) NOT NULL,
+    `contact_person` VARCHAR(100) DEFAULT NULL,
+    `phone` VARCHAR(20) DEFAULT NULL,
+    `email` VARCHAR(100) DEFAULT NULL,
+    `active` TINYINT(1) NOT NULL DEFAULT 1,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================
+-- Customer Branches
+-- =============================================
+CREATE TABLE IF NOT EXISTS `customer_branches` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `customer_id` INT NOT NULL,
+    `branch_name` VARCHAR(150) NOT NULL,
+    `address` VARCHAR(255) DEFAULT NULL,
+    `contact_person` VARCHAR(100) DEFAULT NULL,
+    `phone` VARCHAR(20) DEFAULT NULL,
+    `active` TINYINT(1) NOT NULL DEFAULT 1,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`) ON DELETE CASCADE,
+    INDEX `idx_customer` (`customer_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================
 -- FTTH Lines (Monitored Devices)
 -- =============================================
 CREATE TABLE IF NOT EXISTS `ftth_lines` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `name` VARCHAR(100) NOT NULL,
-    `description` TEXT DEFAULT NULL,
+    `store_code` VARCHAR(50) DEFAULT NULL,
     `ip_address` VARCHAR(45) NOT NULL,
-    `port` INT DEFAULT 80,
+    `provider` VARCHAR(100) DEFAULT NULL,
+    `isp_account` VARCHAR(100) DEFAULT NULL,
     `check_method` ENUM('ping', 'http', 'tcp', 'snmp') NOT NULL DEFAULT 'ping',
-    `check_interval` INT NOT NULL DEFAULT 300 COMMENT 'seconds between checks',
-    `location` VARCHAR(255) DEFAULT NULL,
-    `customer_name` VARCHAR(100) DEFAULT NULL,
+    `customer_id` INT DEFAULT NULL,
+    `branch_name` VARCHAR(255) DEFAULT NULL,
+    `branch_address` TEXT DEFAULT NULL,
+    `phone` VARCHAR(50) DEFAULT NULL,
+    `regional_contact` VARCHAR(100) DEFAULT NULL,
+    `on_net` DATE DEFAULT NULL,
+    `expiry_date` DATE DEFAULT NULL,
+    `notes` TEXT DEFAULT NULL,
     `contract_id` VARCHAR(50) DEFAULT NULL,
     `olt_info` VARCHAR(100) DEFAULT NULL COMMENT 'OLT/PON port info',
     `status` ENUM('up', 'down', 'warning', 'paused', 'unknown') NOT NULL DEFAULT 'unknown',
@@ -61,15 +97,16 @@ CREATE TABLE IF NOT EXISTS `ftth_lines` (
     `last_down` DATETIME DEFAULT NULL,
     `uptime_percent` DECIMAL(5,2) DEFAULT 100.00,
     `avg_response_time` DECIMAL(10,2) DEFAULT NULL COMMENT 'ms',
-    `tags` VARCHAR(255) DEFAULT NULL COMMENT 'comma-separated tags',
     `notify_enabled` TINYINT(1) NOT NULL DEFAULT 1,
     `active` TINYINT(1) NOT NULL DEFAULT 1,
     `created_by` INT DEFAULT NULL,
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE SET NULL,
+    FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`) ON DELETE SET NULL,
     INDEX `idx_status` (`status`),
-    INDEX `idx_ip` (`ip_address`)
+    INDEX `idx_ip` (`ip_address`),
+    INDEX `idx_customer` (`customer_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =============================================
@@ -119,6 +156,16 @@ CREATE TABLE IF NOT EXISTS `activity_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =============================================
+-- System Settings
+-- =============================================
+CREATE TABLE IF NOT EXISTS `system_settings` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `setting_key` VARCHAR(100) NOT NULL UNIQUE,
+    `setting_value` TEXT DEFAULT NULL,
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================
 -- Seed Data
 -- =============================================
 
@@ -141,10 +188,12 @@ INSERT INTO `users` (`username`, `name`, `email`, `password`, `role`) VALUES
 INSERT INTO `user_permissions` (`user_id`, `permission_id`)
     SELECT 1, id FROM `permissions`;
 
--- Sample FTTH lines for demo
-INSERT INTO `ftth_lines` (`name`, `ip_address`, `port`, `check_method`, `location`, `customer_name`, `status`, `created_by`) VALUES
-    ('Line FTTH - VP Chính', '192.168.1.1', 80, 'ping', 'Văn phòng chính', 'Internal', 'unknown', 1),
-    ('Line FTTH - Chi nhánh 1', '10.0.0.1', 80, 'ping', 'Chi nhánh HCM', 'Khách hàng A', 'unknown', 1),
-    ('Line FTTH - Chi nhánh 2', '10.0.1.1', 80, 'ping', 'Chi nhánh HN', 'Khách hàng B', 'unknown', 1);
+-- Default settings
+INSERT INTO `system_settings` (`setting_key`, `setting_value`) VALUES
+    ('ping_interval', '30'),
+    ('timezone', 'Asia/Ho_Chi_Minh'),
+    ('telegram_enabled', '0'),
+    ('telegram_bot_token', ''),
+    ('telegram_chat_id', '');
 
 SET FOREIGN_KEY_CHECKS = 1;

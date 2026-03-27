@@ -121,6 +121,50 @@
 </div>
 </form>
 
+<!-- Change Password (separate form) -->
+<div style="margin-top:30px">
+    <div class="card-dark">
+        <div class="card-header-dark">
+            <h2><i class="fas fa-key"></i> Đổi mật khẩu</h2>
+        </div>
+        <div style="padding:20px">
+            <form method="POST" action="?action=change_password" id="formChangePass">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Mật khẩu hiện tại</label>
+                        <input type="password" class="form-control" name="current_password" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Mật khẩu mới</label>
+                        <input type="password" class="form-control" name="new_password" required minlength="6" id="newPass">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Xác nhận mật khẩu mới</label>
+                        <input type="password" class="form-control" name="confirm_password" required minlength="6" id="confirmPass">
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:16px">
+                    <button type="submit" class="btn-primary-dark" style="padding:10px 28px">
+                        <i class="fas fa-lock"></i> Đổi mật khẩu
+                    </button>
+                    <span id="passMsg" style="font-size:0.8rem"></span>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('formChangePass').addEventListener('submit', function(e) {
+    const np = document.getElementById('newPass').value;
+    const cp = document.getElementById('confirmPass').value;
+    if (np !== cp) {
+        e.preventDefault();
+        document.getElementById('passMsg').innerHTML = '<span style="color:#f87171"><i class="fas fa-times-circle"></i> Mật khẩu xác nhận không khớp!</span>';
+    }
+});
+</script>
+
 <script>
 function testTelegram() {
     const btn = document.getElementById('btnTestTele');

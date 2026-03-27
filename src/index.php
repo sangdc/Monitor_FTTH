@@ -175,6 +175,28 @@ switch ($action) {
         header('Location: ?action=settings');
         exit;
 
+    case 'change_password':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $currentPass = $_POST['current_password'] ?? '';
+            $newPass = $_POST['new_password'] ?? '';
+            $confirmPass = $_POST['confirm_password'] ?? '';
+
+            // Verify current password
+            $currentUser = $user->get($_SESSION['user_id']);
+            if (!password_verify($currentPass, $currentUser['password'])) {
+                $_SESSION['error_message'] = 'Mật khẩu hiện tại không đúng!';
+            } elseif (strlen($newPass) < 6) {
+                $_SESSION['error_message'] = 'Mật khẩu mới phải có ít nhất 6 ký tự!';
+            } elseif ($newPass !== $confirmPass) {
+                $_SESSION['error_message'] = 'Mật khẩu xác nhận không khớp!';
+            } else {
+                $user->setPassword($_SESSION['user_id'], $newPass);
+                $_SESSION['success_message'] = 'Đổi mật khẩu thành công!';
+            }
+        }
+        header('Location: ?action=settings');
+        exit;
+
     // ---- Customers ----
     case 'customers':
         $customers_list = $customer->getAll();
