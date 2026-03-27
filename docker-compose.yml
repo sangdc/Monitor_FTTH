@@ -1,0 +1,66 @@
+services:
+  php:
+    build:
+      context: ./docker/php
+    container_name: ftth_php
+    volumes:
+      - ./src:/var/www/html
+      - temp_data:/var/www/html/temp
+    depends_on:
+      - mysql
+    ports:
+      - "6789:80"
+    environment:
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      TZ: Asia/Ho_Chi_Minh
+
+  mysql:
+    image: mysql:8.0
+    container_name: ftth_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_HOST: '%'
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - ./Data:/var/lib/mysql
+      - ./src/config/Mysql/ftth_monitor_init.sql:/docker-entrypoint-initdb.d/001_init.sql
+    ports:
+      - "3308:3306"
+    command: --default-time-zone='+07:00'
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: ftth_phpmyadmin
+    platform: linux/amd64
+    environment:
+      PMA_HOST: mysql
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "6790:80"
+    depends_on:
+      - mysql
+
+  cron:
+    build:
+      context: ./docker/php
+    container_name: ftth_cron
+    volumes:
+      - ./src:/var/www/html
+    depends_on:
+      - mysql
+    environment:
+      DB_HOST: mysql
+      DB_NAME: ${DB_DATABASE}
+      DB_USER: ${DB_USERNAME}
+      DB_PASS: ${DB_PASSWORD}
+      TZ: Asia/Ho_Chi_Minh
+    command: php /var/www/html/cron/ping_worker.php
+    restart: unless-stopped
+
+volumes:
+  temp_data:

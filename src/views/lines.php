@@ -1,0 +1,305 @@
+<?php require_once 'views/common/layout.php'; renderHeader($currentUser, 'lines'); showFlash();
+
+// Get customer list for filter
+$filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c INNER JOIN ftth_lines l ON l.customer_id = c.id AND l.active = 1 ORDER BY c.name")->fetchAll(PDO::FETCH_ASSOC);
+?>
+
+<div class="page-header">
+    <div class="page-title"><i class="fas fa-network-wired"></i> Quản lý FTTH Lines</div>
+    <div style="display:flex;align-items:center;gap:10px">
+        <!-- Search Mã CH -->
+        <div style="position:relative">
+            <i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.25);font-size:0.72rem"></i>
+            <input type="text" id="searchStoreCode" placeholder="Tìm Mã CH..." oninput="filterTable()"
+                style="background:#1e293b;border:1px solid rgba(255,255,255,0.1);color:#e2e8f0;padding:6px 10px 6px 30px;border-radius:6px;font-size:0.8rem;width:130px;font-family:'JetBrains Mono',monospace">
+        </div>
+        <!-- Customer filter -->
+        <select id="customerFilter" onchange="filterTable()" style="background:#1e293b;border:1px solid rgba(255,255,255,0.1);color:#e2e8f0;padding:6px 10px;border-radius:6px;font-size:0.8rem;cursor:pointer;font-family:'Inter',sans-serif;min-width:150px">
+            <option value="">Tất cả KH</option>
+            <?php foreach ($filterCustomers as $fc): ?>
+                <option value="<?= $fc['id'] ?>"><?= htmlspecialchars($fc['name']) ?></option>
+            <?php endforeach; ?>
+        </select>
+        <button class="btn-primary-dark" data-bs-toggle="modal" data-bs-target="#lineModal" onclick="resetLineForm()">
+            <i class="fas fa-plus"></i> Thêm Line
+        </button>
+    </div>
+</div>
+
+<div class="card-dark" style="padding:0">
+    <?php if (!empty($lines)): ?>
+    <div style="overflow-x:auto">
+        <table class="tbl tbl-full" id="linesTable">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Mã CH</th>
+                    <th id="thKH" class="kh-col">KH</th>
+                    <th>Store</th>
+                    <th>Địa chỉ</th>
+                    <th>NCC</th>
+                    <th>Account ISP</th>
+                    <th>IP Tĩnh</th>
+                    <th>SĐT</th>
+                    <th>Liên lạc KT</th>
+                    <th>On net</th>
+                    <th>Hết hạn</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="linesBody">
+                <?php foreach ($lines as $i => $line): ?>
+                <tr data-cid="<?= $line['customer_id'] ?? '' ?>" data-scode="<?= htmlspecialchars(strtolower($line['store_code'] ?? '')) ?>">
+                    <td class="rn"><?= $i + 1 ?></td>
+                    <td class="mono"><?= htmlspecialchars($line['store_code'] ?? '') ?: '—' ?></td>
+                    <td class="kh-col nw"><?= htmlspecialchars($line['customer_name_rel'] ?? $line['customer_name'] ?? '—') ?></td>
+                    <td class="nw"><strong><?= htmlspecialchars($line['name']) ?></strong></td>
+                    <td class="dim" style="min-width:140px"><?= htmlspecialchars($line['branch_address'] ?? '') ?></td>
+                    <td class="mono nw"><?= htmlspecialchars($line['provider'] ?? '') ?: '—' ?></td>
+                    <td class="mono"><?= htmlspecialchars($line['isp_account'] ?? '') ?: '—' ?></td>
+                    <td class="mono nw"><?= htmlspecialchars($line['ip_address']) ?></td>
+                    <td class="dim nw"><?= htmlspecialchars($line['phone'] ?? '') ?: '—' ?></td>
+                    <td class="dim nw"><?= htmlspecialchars($line['regional_contact'] ?? '') ?: '—' ?></td>
+                    <td class="dim nw"><?= $line['on_net'] ? date('d/m/Y', strtotime($line['on_net'])) : '—' ?></td>
+                    <td class="nw"><?php if ($line['expiry_date']): $exp=strtotime($line['expiry_date']); $d=floor(($exp-time())/86400); $cl=$d<=30?'#f87171':($d<=90?'#fbbf24':'rgba(255,255,255,0.45)'); ?><span style="color:<?=$cl?>"><?=date('d/m/Y',$exp)?></span><?php else: ?>—<?php endif; ?></td>
+
+                    <td>
+                        <div style="display:flex;gap:4px">
+                            <button class="btn-sm-icon edit" onclick="editLine(<?= htmlspecialchars(json_encode($line)) ?>)" title="Sửa"><i class="fas fa-pen"></i></button>
+                            <a href="?action=delete_line&id=<?= $line['id'] ?>" class="btn-sm-icon delete" onclick="return confirm('Xóa line này?')" title="Xóa"><i class="fas fa-trash"></i></a>
+                        </div>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php else: ?>
+    <div class="empty-state"><i class="fas fa-network-wired"></i><p>Chưa có line FTTH nào</p></div>
+    <?php endif; ?>
+</div>
+
+<!-- Line Modal -->
+<div class="modal fade" id="lineModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="lineModalTitle">Thêm FTTH Line</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="?action=save_line">
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="lineId">
+                    <input type="hidden" name="customer_id" id="lineCustomerId">
+                    <div class="row">
+                        <div class="col-md-8 mb-3" style="position:relative">
+                            <label class="form-label">Khách hàng *</label>
+                            <input type="text" class="form-control" id="customerSearch" required placeholder="Gõ tên khách hàng để tìm..." autocomplete="off" oninput="searchCustomer(this.value)" onfocus="searchCustomer(this.value)">
+                            <div id="customerDropdown" class="search-dropdown" style="display:none"></div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Mã CH</label>
+                            <input type="text" class="form-control" name="store_code" id="lineStoreCode" placeholder="VD: CH-001">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-5 mb-3">
+                            <label class="form-label">Store (Tên line) *</label>
+                            <input type="text" class="form-control" name="name" id="lineName" required placeholder="VD: Chi nhánh Quận 1">
+                        </div>
+                        <div class="col-md-7 mb-3">
+                            <label class="form-label">Địa chỉ</label>
+                            <input type="text" class="form-control" name="branch_address" id="lineBranchAddress" placeholder="VD: 123 Nguyễn Huệ, P.Bến Nghé, Q.1">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">NCC</label>
+                            <select class="form-select" name="provider" id="lineProvider">
+                                <option value="">— Chọn —</option>
+                                <option value="VNPT">VNPT</option>
+                                <option value="FPT">FPT</option>
+                                <option value="Viettel">Viettel</option>
+                                <option value="CMC">CMC</option>
+                                <option value="SCTV">SCTV</option>
+                                <option value="Netnam">Netnam</option>
+                                <option value="Khác">Khác</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Account ISP</label>
+                            <input type="text" class="form-control" name="isp_account" id="lineAccount" placeholder="Tài khoản ISP" style="font-family:'JetBrains Mono',monospace;font-size:0.85rem">
+                        </div>
+                        <div class="col-md-5 mb-3">
+                            <label class="form-label">IP Tĩnh *</label>
+                            <input type="text" class="form-control" name="ip_address" id="lineIP" required placeholder="VD: 113.161.x.x" style="font-family:'JetBrains Mono',monospace">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">SĐT cửa hàng</label>
+                            <input type="text" class="form-control" name="phone" id="linePhone" placeholder="028 xxxx xxxx">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Liên lạc KT khu vực</label>
+                            <input type="text" class="form-control" name="regional_contact" id="lineRegContact" placeholder="SĐT / Tên">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Ngày hết hạn</label>
+                            <input type="date" class="form-control" name="expiry_date" id="lineExpiry">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Ngày On net</label>
+                            <input type="date" class="form-control" name="on_net" id="lineOnNet">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Mã hợp đồng</label>
+                            <input type="text" class="form-control" name="contract_id" id="lineContract">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">OLT/PON</label>
+                            <input type="text" class="form-control" name="olt_info" id="lineOLT" placeholder="OLT-HCM-01/PON 3/1">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Phương thức</label>
+                            <select class="form-select" name="check_method" id="lineMethod">
+                                <option value="ping">Ping (ICMP)</option>
+                                <option value="http">HTTP</option>
+                                <option value="tcp">TCP</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Ghi chú</label>
+                        <textarea class="form-control" name="notes" id="lineNotes" rows="2" placeholder="Ghi chú thêm..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary-dark" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn-primary-dark"><i class="fas fa-save"></i> Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.tbl-full { width:100%; }
+.tbl-full th, .tbl-full td { padding:6px 8px; font-size:0.75rem; vertical-align:middle; }
+.tbl-full th { font-size:0.65rem; text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap; }
+.tbl-full .mono { font-family:'JetBrains Mono',monospace; font-size:0.72rem; }
+.tbl-full .dim { color:rgba(255,255,255,0.4); font-size:0.72rem; }
+.tbl-full .nw { white-space:nowrap; }
+.tbl-full .rn { color:rgba(255,255,255,0.25); }
+.search-dropdown {
+    position:absolute; top:100%; left:0; right:0; z-index:1050;
+    background:#1e293b; border:1px solid rgba(255,255,255,0.1);
+    border-radius:0 0 8px 8px; max-height:220px; overflow-y:auto;
+    box-shadow:0 8px 24px rgba(0,0,0,0.5);
+}
+.search-dropdown .dd-item { padding:10px 14px; cursor:pointer; font-size:0.88rem; border-bottom:1px solid rgba(255,255,255,0.04); transition:background 0.15s; }
+.search-dropdown .dd-item:hover { background:rgba(6,182,212,0.12); }
+.search-dropdown .dd-sub { font-size:0.72rem; color:rgba(255,255,255,0.35); margin-top:2px; }
+.search-dropdown .dd-empty { padding:14px; text-align:center; color:rgba(255,255,255,0.3); font-size:0.82rem; }
+</style>
+
+<script>
+const allCustomers = <?= json_encode($customers_list) ?>;
+let ddVisible = false;
+
+function filterTable() {
+    const cid = document.getElementById('customerFilter').value;
+    const scode = document.getElementById('searchStoreCode').value.toLowerCase().trim();
+    const rows = document.querySelectorAll('#linesBody tr');
+    let idx = 0;
+
+    // Toggle KH column visibility
+    const show = !cid;
+    document.getElementById('thKH').style.display = show ? '' : 'none';
+    document.querySelectorAll('.kh-col').forEach(c => c.style.display = show ? '' : 'none');
+
+    rows.forEach(row => {
+        const matchCust = !cid || row.dataset.cid === cid;
+        const matchCode = !scode || (row.dataset.scode && row.dataset.scode.includes(scode));
+        if (matchCust && matchCode) {
+            row.style.display = '';
+            idx++;
+            row.querySelector('.rn').textContent = idx;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    localStorage.setItem('ftth_lines_customer', cid);
+}
+
+function searchCustomer(query) {
+    const dd = document.getElementById('customerDropdown');
+    query = query.toLowerCase().trim();
+    const filtered = query === '' ? allCustomers : allCustomers.filter(c =>
+        c.name.toLowerCase().includes(query) || (c.contact_person && c.contact_person.toLowerCase().includes(query)) || (c.phone && c.phone.includes(query))
+    );
+    if (filtered.length === 0) {
+        dd.innerHTML = '<div class="dd-empty">Không tìm thấy — <a href="?action=customers" style="color:#06b6d4">Thêm KH mới</a></div>';
+    } else {
+        dd.innerHTML = filtered.map(c =>
+            `<div class="dd-item" onclick="selectCustomer(${c.id}, '${c.name.replace(/'/g, "\\'")}')"><div>${c.name}</div>${c.contact_person ? `<div class="dd-sub"><i class="fas fa-user" style="width:12px"></i> ${c.contact_person}</div>` : ''}</div>`
+        ).join('');
+    }
+    dd.style.display = 'block'; ddVisible = true;
+}
+
+function selectCustomer(id, name) {
+    document.getElementById('customerSearch').value = name;
+    document.getElementById('lineCustomerId').value = id;
+    document.getElementById('customerDropdown').style.display = 'none'; ddVisible = false;
+}
+
+document.addEventListener('click', e => {
+    if (ddVisible && !e.target.closest('#customerSearch') && !e.target.closest('#customerDropdown')) {
+        document.getElementById('customerDropdown').style.display = 'none'; ddVisible = false;
+    }
+});
+
+function resetLineForm() {
+    document.getElementById('lineModalTitle').textContent = 'Thêm FTTH Line';
+    ['lineId','lineName','lineIP','lineContract','lineOLT','lineNotes','lineBranchAddress','lineCustomerId','lineStoreCode','lineAccount','linePhone','lineRegContact','lineExpiry','lineOnNet'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('customerSearch').value = '';
+    document.getElementById('lineMethod').value = 'ping';
+    document.getElementById('lineProvider').value = '';
+}
+
+function editLine(l) {
+    document.getElementById('lineModalTitle').textContent = 'Sửa FTTH Line';
+    document.getElementById('lineId').value = l.id;
+    document.getElementById('lineName').value = l.name;
+    document.getElementById('lineStoreCode').value = l.store_code || '';
+    document.getElementById('lineIP').value = l.ip_address;
+    document.getElementById('lineProvider').value = l.provider || '';
+    document.getElementById('lineAccount').value = l.isp_account || '';
+    document.getElementById('lineMethod').value = l.check_method;
+    document.getElementById('lineContract').value = l.contract_id || '';
+    document.getElementById('lineOLT').value = l.olt_info || '';
+    document.getElementById('lineNotes').value = l.notes || '';
+    document.getElementById('lineBranchAddress').value = l.branch_address || '';
+    document.getElementById('linePhone').value = l.phone || '';
+    document.getElementById('lineRegContact').value = l.regional_contact || '';
+    document.getElementById('lineOnNet').value = l.on_net || '';
+    document.getElementById('lineExpiry').value = l.expiry_date || '';
+    if (l.customer_id) {
+        document.getElementById('lineCustomerId').value = l.customer_id;
+        document.getElementById('customerSearch').value = l.customer_name_rel || l.customer_name || '';
+    } else { document.getElementById('customerSearch').value = ''; }
+    new bootstrap.Modal(document.getElementById('lineModal')).show();
+}
+
+// Init: restore filter
+(function() {
+    const saved = localStorage.getItem('ftth_lines_customer');
+    if (saved) { document.getElementById('customerFilter').value = saved; filterTable(); }
+})();
+</script>
+
+<?php renderFooter(); ?>

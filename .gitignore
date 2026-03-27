@@ -1,0 +1,24 @@
+# Environment
+.env
+
+# Docker volumes / MySQL data
+docker/mysql/data/
+Data/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Dependencies
+vendor/
+node_modules/
