@@ -192,6 +192,7 @@ switch ($action) {
             foreach ($users_list as &$u) {
                 $u['permissions'] = $user->getUserPermissions($u['id']);
             }
+            unset($u); // Fix reference bug
             $all_permissions = $user->getAllPermissions();
             include 'views/users.php';
             break;
