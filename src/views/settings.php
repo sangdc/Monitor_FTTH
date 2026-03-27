@@ -1,4 +1,4 @@
-<?php require_once 'views/common/layout.php'; renderHeader($currentUser, 'settings'); showFlash(); ?>
+<?php require_once 'views/common/layout.php'; renderHeader($currentUser, $user, 'settings'); showFlash(); ?>
 
 <div class="page-header">
     <div class="page-title"><i class="fas fa-cog"></i> Cài đặt hệ thống</div>

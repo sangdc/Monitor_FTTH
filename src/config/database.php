@@ -13,12 +13,13 @@ try {
         "mysql:host={$db_config['host']};port={$db_config['port']};dbname={$db_config['dbname']}",
         $db_config['username'],
         $db_config['password'],
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
-        ]
-    );
-} catch (PDOException $e) {
+    [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
+    ]
+        );
+}
+catch (PDOException $e) {
     die("Connection failed: " . $e->getMessage());
 }

@@ -1,11 +1,11 @@
 <?php
-function renderHeader($currentUser, $activeMenu = 'dashboard') {
+function renderHeader($currentUser, $userModel, $activeMenu = 'dashboard') {
     $menuItems = [
         'dashboard' => ['icon' => 'fa-chart-line', 'label' => 'Dashboard'],
         'lines' => ['icon' => 'fa-network-wired', 'label' => 'FTTH Lines'],
         'customers' => ['icon' => 'fa-building', 'label' => 'Khách hàng'],
     ];
-    if (($currentUser['role'] ?? '') === 'admin') {
+    if ($userModel->hasPermission($currentUser['id'], 'system_settings')) {
         $menuItems['users'] = ['icon' => 'fa-users-cog', 'label' => 'Users'];
         $menuItems['settings'] = ['icon' => 'fa-cog', 'label' => 'Cài đặt'];
     }

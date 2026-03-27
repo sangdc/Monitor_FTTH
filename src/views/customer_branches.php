@@ -1,4 +1,4 @@
-<?php require_once 'views/common/layout.php'; renderHeader($currentUser, 'customers'); showFlash(); ?>
+<?php require_once 'views/common/layout.php'; renderHeader($currentUser, $user, 'customers'); showFlash(); ?>
 
 <div class="page-header">
     <div class="page-title">
@@ -7,9 +7,11 @@
         <?= htmlspecialchars($customerData['name']) ?>
         <span style="font-size:0.85rem;color:rgba(255,255,255,0.4);font-weight:400">— Chi nhánh</span>
     </div>
+    <?php if ($user->hasPermission($currentUser['id'], 'manage_customers')): ?>
     <button class="btn-primary-dark" data-bs-toggle="modal" data-bs-target="#branchModal" onclick="resetBranchForm()">
         <i class="fas fa-plus"></i> Thêm chi nhánh
     </button>
+    <?php endif; ?>
 </div>
 
 <div class="card-dark">
@@ -36,6 +38,7 @@
                     <td><?= htmlspecialchars($b['contact_person'] ?? '—') ?></td>
                     <td class="mono"><?= htmlspecialchars($b['phone'] ?? '—') ?></td>
                     <td><span class="mono"><?= $b['line_count'] ?></span></td>
+                    <?php if ($user->hasPermission($currentUser['id'], 'manage_customers')): ?>
                     <td>
                         <div class="actions-cell">
                             <button class="btn-sm-icon edit" onclick="editBranch(<?= htmlspecialchars(json_encode($b)) ?>)" title="Sửa">
@@ -46,6 +49,9 @@
                             </a>
                         </div>
                     </td>
+                    <?php else: ?>
+                    <td></td>
+                    <?php endif; ?>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

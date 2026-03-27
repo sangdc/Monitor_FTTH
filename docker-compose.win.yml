@@ -68,3 +68,4 @@ services:
 
 volumes:
   temp_data:
+  db_data:

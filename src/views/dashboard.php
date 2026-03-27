@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set('Asia/Ho_Chi_Minh');
 require_once 'views/common/layout.php';
-renderHeader($currentUser, 'dashboard');
+renderHeader($currentUser, $user, 'dashboard');
 showFlash();
 
 // Get unique customers for filter dropdown

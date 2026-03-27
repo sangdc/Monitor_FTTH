@@ -1,10 +1,12 @@
-<?php require_once 'views/common/layout.php'; renderHeader($currentUser, 'customers'); showFlash(); ?>
+<?php require_once 'views/common/layout.php'; renderHeader($currentUser, $user, 'customers'); showFlash(); ?>
 
 <div class="page-header">
     <div class="page-title"><i class="fas fa-building"></i> Quản lý Khách hàng</div>
+    <?php if ($user->hasPermission($currentUser['id'], 'manage_customers')): ?>
     <button class="btn-primary-dark" data-bs-toggle="modal" data-bs-target="#customerModal" onclick="resetForm()">
         <i class="fas fa-plus"></i> Thêm khách hàng
     </button>
+    <?php endif; ?>
 </div>
 
 <div class="card-dark">
@@ -39,6 +41,7 @@
                         </button>
                     </td>
                     <td><span class="mono"><?= $c['line_count'] ?></span></td>
+                    <?php if ($user->hasPermission($currentUser['id'], 'manage_customers')): ?>
                     <td>
                         <div class="actions-cell">
                             <button class="btn-sm-icon edit" onclick="editCustomer(<?= htmlspecialchars(json_encode($c)) ?>)" title="Sửa">
@@ -49,6 +52,9 @@
                             </a>
                         </div>
                     </td>
+                    <?php else: ?>
+                    <td></td>
+                    <?php endif; ?>
                 </tr>
                 <!-- Branch sub-row (hidden by default) -->
                 <tr id="br-<?= $c['id'] ?>" class="branch-row" style="display:none">

@@ -28,7 +28,8 @@ while (true) {
     try {
         // Read interval from DB each loop (admin can change it live)
         $interval = intval($setting->get('ping_interval', 30));
-        if ($interval < 5) $interval = 5; // minimum 5 seconds
+        if ($interval < 5)
+            $interval = 5; // minimum 5 seconds
 
         $telegramEnabled = $setting->get('telegram_enabled', '0') === '1';
         $telegramToken = $setting->get('telegram_bot_token', '');
@@ -54,8 +55,10 @@ while (true) {
                 $result['success'] ? 'OK' : 'Timeout/Unreachable'
             );
 
-            if ($status === 'up') $upCount++;
-            else $downCount++;
+            if ($status === 'up')
+                $upCount++;
+            else
+                $downCount++;
 
             // Detect status transition: was UP/unknown, now DOWN
             $prevStatus = $previousStatuses[$line['id']] ?? $line['status'];
@@ -66,7 +69,8 @@ while (true) {
                 try {
                     $alertStmt = $pdo->prepare("INSERT INTO alert_log (line_id, alert_type, message) VALUES (?, 'down', ?)");
                     $alertStmt->execute([$line['id'], "Line '{$line['name']}' ({$line['ip_address']}) is DOWN"]);
-                } catch (Exception $e) {
+                }
+                catch (Exception $e) {
                     echo "[" . date('Y-m-d H:i:s') . "] Alert log error: " . $e->getMessage() . "\n";
                 }
 
@@ -93,8 +97,9 @@ while (true) {
                 try {
                     $alertStmt = $pdo->prepare("INSERT INTO alert_log (line_id, alert_type, message) VALUES (?, 'recovery', ?)");
                     $alertStmt->execute([$line['id'], "Line '{$line['name']}' ({$line['ip_address']}) recovered"]);
-                } catch (Exception $e) {
-                    // silent
+                }
+                catch (Exception $e) {
+                // silent
                 }
 
                 if ($telegramEnabled && $telegramToken && $telegramChatId) {
@@ -112,9 +117,10 @@ while (true) {
 
         echo "[" . date('Y-m-d H:i:s') . "] Cycle done: {$upCount} up, {$downCount} down. Sleeping {$interval}s\n";
 
-    } catch (Exception $e) {
+    }
+    catch (Exception $e) {
         echo "[" . date('Y-m-d H:i:s') . "] ERROR: " . $e->getMessage() . "\n";
-        
+
         // Reconnect DB if connection lost
         try {
             $host = getenv('DB_HOST') ?: 'mysql';
@@ -128,7 +134,8 @@ while (true) {
             $ftthLine = new FtthLine($pdo);
             $setting = new Setting($pdo);
             echo "[" . date('Y-m-d H:i:s') . "] DB reconnected\n";
-        } catch (Exception $re) {
+        }
+        catch (Exception $re) {
             echo "[" . date('Y-m-d H:i:s') . "] Reconnect failed: " . $re->getMessage() . "\n";
         }
     }
@@ -136,7 +143,8 @@ while (true) {
     sleep($interval ?? 30);
 }
 
-function sendTelegram($token, $chatId, $message) {
+function sendTelegram($token, $chatId, $message)
+{
     $url = "https://api.telegram.org/bot{$token}/sendMessage";
     $data = [
         'chat_id' => $chatId,
@@ -159,7 +167,8 @@ function sendTelegram($token, $chatId, $message) {
 
     if ($httpCode !== 200) {
         echo "[" . date('Y-m-d H:i:s') . "] Telegram send failed (HTTP {$httpCode}): {$result}\n";
-    } else {
+    }
+    else {
         echo "[" . date('Y-m-d H:i:s') . "] Telegram sent OK\n";
     }
 }

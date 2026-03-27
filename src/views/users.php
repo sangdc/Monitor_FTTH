@@ -1,4 +1,4 @@
-<?php require_once 'views/common/layout.php'; renderHeader($currentUser, 'users'); showFlash(); ?>
+<?php require_once 'views/common/layout.php'; renderHeader($currentUser, $user, 'users'); showFlash(); ?>
 
 <div class="page-header">
     <div class="page-title"><i class="fas fa-users-cog"></i> Quản lý Users</div>
@@ -102,12 +102,23 @@
                     <input type="password" class="form-control" name="password" id="userPassword" minlength="6">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Vai trò</label>
-                    <select class="form-select" name="role" id="userRole">
+                    <label class="form-label">Vai trò chính</label>
+                    <select class="form-select" name="role" id="userRole" onchange="autoSelectPermissions(this.value)">
                         <option value="viewer">Viewer — Chỉ xem Dashboard, Lines, KH</option>
                         <option value="user">User — Xem + Quản lý Lines/KH</option>
                         <option value="admin">Admin — Full quyền</option>
                     </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Quyền chi tiết</label>
+                    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                        <?php foreach ($all_permissions as $p): ?>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:0.8rem;cursor:pointer">
+                            <input type="checkbox" name="permissions[]" value="<?= $p['id'] ?>" class="perm-check" data-name="<?= $p['name'] ?>">
+                            <span><?= htmlspecialchars($p['description'] ?: $p['name']) ?></span>
+                        </label>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
                 <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
                     <button type="button" class="btn-secondary-dark" onclick="closeModal()">Hủy</button>
@@ -142,7 +153,28 @@ function editUser(u) {
     document.getElementById('userPassword').value = '';
     document.getElementById('userPassword').required = false;
     document.getElementById('passHint').textContent = '(để trống nếu không đổi)';
+    
+    // Set permissions
+    const perms = u.permissions || [];
+    document.querySelectorAll('.perm-check').forEach(cb => {
+        cb.checked = perms.includes(parseInt(cb.value));
+    });
+
     document.getElementById('userModal').style.display = 'flex';
+}
+
+function autoSelectPermissions(role) {
+    const checks = document.querySelectorAll('.perm-check');
+    checks.forEach(cb => {
+        const name = cb.dataset.name;
+        if (role === 'admin') {
+            cb.checked = true;
+        } else if (role === 'user') {
+            cb.checked = ['view_dashboard', 'manage_lines', 'manage_customers', 'view_reports'].includes(name);
+        } else if (role === 'viewer') {
+            cb.checked = ['view_dashboard', 'view_reports'].includes(name);
+        }
+    });
 }
 
 function closeModal() {

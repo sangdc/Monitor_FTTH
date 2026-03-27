@@ -1,4 +1,4 @@
-<?php require_once 'views/common/layout.php'; renderHeader($currentUser, 'lines'); showFlash();
+<?php require_once 'views/common/layout.php'; renderHeader($currentUser, $user, 'lines'); showFlash();
 
 // Get customer list for filter
 $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c INNER JOIN ftth_lines l ON l.customer_id = c.id AND l.active = 1 ORDER BY c.name")->fetchAll(PDO::FETCH_ASSOC);
@@ -20,9 +20,11 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
                 <option value="<?= $fc['id'] ?>"><?= htmlspecialchars($fc['name']) ?></option>
             <?php endforeach; ?>
         </select>
+        <?php if ($user->hasPermission($currentUser['id'], 'manage_lines')): ?>
         <button class="btn-primary-dark" data-bs-toggle="modal" data-bs-target="#lineModal" onclick="resetLineForm()">
             <i class="fas fa-plus"></i> Thêm Line
         </button>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -63,12 +65,16 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
                     <td class="dim nw"><?= $line['on_net'] ? date('d/m/Y', strtotime($line['on_net'])) : '—' ?></td>
                     <td class="nw"><?php if ($line['expiry_date']): $exp=strtotime($line['expiry_date']); $d=floor(($exp-time())/86400); $cl=$d<=30?'#f87171':($d<=90?'#fbbf24':'rgba(255,255,255,0.45)'); ?><span style="color:<?=$cl?>"><?=date('d/m/Y',$exp)?></span><?php else: ?>—<?php endif; ?></td>
 
+                    <?php if ($user->hasPermission($currentUser['id'], 'manage_lines')): ?>
                     <td>
                         <div style="display:flex;gap:4px">
                             <button class="btn-sm-icon edit" onclick="editLine(<?= htmlspecialchars(json_encode($line)) ?>)" title="Sửa"><i class="fas fa-pen"></i></button>
                             <a href="?action=delete_line&id=<?= $line['id'] ?>" class="btn-sm-icon delete" onclick="return confirm('Xóa line này?')" title="Xóa"><i class="fas fa-trash"></i></a>
                         </div>
                     </td>
+                    <?php else: ?>
+                    <td></td>
+                    <?php endif; ?>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

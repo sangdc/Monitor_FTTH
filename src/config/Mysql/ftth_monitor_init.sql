@@ -182,7 +182,8 @@ INSERT INTO `permissions` (`name`, `description`) VALUES
 
 -- Admin user (password: admin123)
 INSERT INTO `users` (`username`, `name`, `email`, `password`, `role`) VALUES
-    ('admin', 'Administrator', 'admin@ftthmonitor.local', '$2y$10$k689w2Ip0zYKxqpKH7ZPduQ/afo5hfs7p.rMeiVh884ka9VpuKqEy', 'admin');
+    ('admin', 'Administrator', 'admin@ftthmonitor.local', '$2y$10$k689w2Ip0zYKxqpKH7ZPduQ/afo5hfs7p.rMeiVh884ka9VpuKqEy', 'admin'),
+    ('viewer', 'Viewer User', 'viewer@ftthmonitor.local', '$2y$10$k689w2Ip0zYKxqpKH7ZPduQ/afo5hfs7p.rMeiVh884ka9VpuKqEy', 'viewer');
 
 -- Grant all permissions to admin
 INSERT INTO `user_permissions` (`user_id`, `permission_id`)

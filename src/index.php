@@ -161,7 +161,7 @@ switch ($action) {
     case 'users':
     case 'save_user':
     case 'toggle_user':
-        if ($currentUser['role'] !== 'admin') {
+        if (!$user->hasPermission($currentUser['id'], 'system_settings')) {
             $_SESSION['error_message'] = 'Bạn không có quyền truy cập!';
             header('Location: ?action=dashboard');
             exit;
@@ -188,6 +188,11 @@ switch ($action) {
 
         if ($action === 'users') {
             $users_list = $user->getAll();
+            // Fetch permissions for each user to pre-fill the edit modal
+            foreach ($users_list as &$u) {
+                $u['permissions'] = $user->getUserPermissions($u['id']);
+            }
+            $all_permissions = $user->getAllPermissions();
             include 'views/users.php';
             break;
         }
@@ -219,12 +224,19 @@ switch ($action) {
                             'password' => $_POST['password'],
                             'role' => $_POST['role'] ?? 'viewer'
                         ]);
-                        $_SESSION['success_message'] = 'Tạo user thành công!';
+                $_SESSION['success_message'] = 'Tạo user thành công!';
                     } catch (PDOException $e) {
                         $_SESSION['error_message'] = 'Username đã tồn tại!';
                     }
                 }
             }
+
+            // Sync granular permissions if provided (and user ID is known)
+            $newUserId = $id ?: ($pdo->lastInsertId() ?: null);
+            if ($newUserId && isset($_POST['permissions']) && is_array($_POST['permissions'])) {
+                $user->updatePermissions($newUserId, $_POST['permissions']);
+            }
+
             header('Location: ?action=users');
             exit;
         }
@@ -270,6 +282,11 @@ switch ($action) {
         break;
 
     case 'save_customer':
+        if (!$user->hasPermission($currentUser['id'], 'manage_customers')) {
+            $_SESSION['error_message'] = 'Bạn không có quyền thực hiện hành động này!';
+            header('Location: ?action=customers');
+            exit;
+        }
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 if (!empty($_POST['id'])) {
@@ -285,6 +302,11 @@ switch ($action) {
         exit;
 
     case 'delete_customer':
+        if (!$user->hasPermission($currentUser['id'], 'manage_customers')) {
+            $_SESSION['error_message'] = 'Bạn không có quyền thực hiện hành động này!';
+            header('Location: ?action=customers');
+            exit;
+        }
         $customer->delete($_GET['id']);
         $_SESSION['success_message'] = 'Đã xóa khách hàng!';
         header('Location: ?action=customers');
@@ -306,6 +328,11 @@ switch ($action) {
         break;
 
     case 'save_branch':
+        if (!$user->hasPermission($currentUser['id'], 'manage_customers')) {
+            $_SESSION['error_message'] = 'Bạn không có quyền thực hiện hành động này!';
+            header('Location: ?action=customers');
+            exit;
+        }
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 if (!empty($_POST['id'])) {
@@ -321,6 +348,11 @@ switch ($action) {
         exit;
 
     case 'delete_branch':
+        if (!$user->hasPermission($currentUser['id'], 'manage_customers')) {
+            $_SESSION['error_message'] = 'Bạn không có quyền thực hiện hành động này!';
+            header('Location: ?action=customers');
+            exit;
+        }
         $branch = $customer->getBranch($_GET['id']);
         $customer->deleteBranch($_GET['id']);
         $_SESSION['success_message'] = 'Đã xóa chi nhánh!';
@@ -335,6 +367,11 @@ switch ($action) {
         break;
 
     case 'save_line':
+        if (!$user->hasPermission($currentUser['id'], 'manage_lines')) {
+            $_SESSION['error_message'] = 'Bạn không có quyền thực hiện hành động này!';
+            header('Location: ?action=lines');
+            exit;
+        }
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $_POST['created_by'] = $_SESSION['user_id'];
@@ -377,6 +414,11 @@ switch ($action) {
         exit;
 
     case 'delete_line':
+        if (!$user->hasPermission($currentUser['id'], 'manage_lines')) {
+            $_SESSION['error_message'] = 'Bạn không có quyền thực hiện hành động này!';
+            header('Location: ?action=lines');
+            exit;
+        }
         $ftthLine->delete($_GET['id']);
         $_SESSION['success_message'] = 'Đã xóa line!';
         header('Location: ?action=lines');
