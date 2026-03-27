@@ -17,9 +17,9 @@
                 <tr>
                     <th>#</th>
                     <th>Tên khách hàng</th>
-                    <th>Người liên hệ</th>
-                    <th>Điện thoại</th>
-                    <th>Email</th>
+                    <th class="hide-mobile">Người liên hệ</th>
+                    <th class="hide-mobile">Điện thoại</th>
+                    <th class="hide-mobile">Email</th>
                     <th>Chi nhánh</th>
                     <th>Lines</th>
                     <th></th>
@@ -30,9 +30,9 @@
                 <tr id="cr-<?= $c['id'] ?>">
                     <td class="muted"><?= $i + 1 ?></td>
                     <td class="name-cell"><?= htmlspecialchars($c['name']) ?></td>
-                    <td><?= htmlspecialchars($c['contact_person'] ?? '—') ?></td>
-                    <td class="mono"><?= htmlspecialchars($c['phone'] ?? '—') ?></td>
-                    <td class="muted"><?= htmlspecialchars($c['email'] ?? '—') ?></td>
+                    <td class="hide-mobile"><?= htmlspecialchars($c['contact_person'] ?? '—') ?></td>
+                    <td class="mono hide-mobile"><?= htmlspecialchars($c['phone'] ?? '—') ?></td>
+                    <td class="muted hide-mobile"><?= htmlspecialchars($c['email'] ?? '—') ?></td>
                     <td>
                         <button class="branch-toggle" onclick="toggleBranches(<?= $c['id'] ?>, this)" title="Xem chi nhánh">
                             <i class="fas fa-sitemap"></i>

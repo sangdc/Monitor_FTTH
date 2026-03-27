@@ -56,7 +56,7 @@ $filterCustomers = $customersStmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
     <div class="status-card paused">
         <div class="count" id="c-unknown"><?= ($stats['paused_count'] ?? 0) + ($stats['unknown_count'] ?? 0) ?></div>
-        <div class="label">Unknown</div>
+        <div class="label">Unknown / Off</div>
     </div>
 </div>
 
@@ -84,14 +84,14 @@ $filterCustomers = $customersStmt->fetchAll(PDO::FETCH_ASSOC);
                 <tr>
                     <th>#</th>
                     <th>Mã CH</th>
-                    <th id="thCustomer">Khách hàng</th>
+                    <th class="hide-mobile" id="thCustomer">Khách hàng</th>
                     <th>Store</th>
-                    <th>Địa chỉ</th>
-                    <th>NCC</th>
-                    <th>IP Tĩnh</th>
+                    <th class="hide-mobile">Địa chỉ</th>
+                    <th class="hide-mobile">NCC</th>
+                    <th class="hide-mobile">IP Tĩnh</th>
                     <th>Status</th>
                     <th>Response</th>
-                    <th>Last Check</th>
+                    <th class="hide-mobile">Last Check</th>
                 </tr>
             </thead>
             <tbody id="linesBody">
@@ -100,11 +100,11 @@ $filterCustomers = $customersStmt->fetchAll(PDO::FETCH_ASSOC);
                 <tr id="line-row-<?= $line['id'] ?>" data-customer-id="<?= $line['customer_id'] ?? '' ?>" data-status="<?= $line['status'] ?>">
                     <td class="muted row-num"><?= $i + 1 ?></td>
                     <td class="mono" style="font-size:0.78rem"><?= htmlspecialchars($line['store_code'] ?? '—') ?></td>
-                    <td class="customer-col"><?= htmlspecialchars($line['customer_name_rel'] ?? $line['customer_name'] ?? '—') ?></td>
+                    <td class="customer-col hide-mobile"><?= htmlspecialchars($line['customer_name_rel'] ?? $line['customer_name'] ?? '—') ?></td>
                     <td class="name-cell"><?= htmlspecialchars($line['name']) ?></td>
-                    <td class="muted"><small><?= htmlspecialchars($line['branch_address'] ?? '') ?></small></td>
-                    <td><span class="mono" style="font-size:0.78rem"><?= htmlspecialchars($line['provider'] ?? '—') ?></span></td>
-                    <td class="mono"><?= htmlspecialchars($line['ip_address']) ?></td>
+                    <td class="muted hide-mobile"><small><?= htmlspecialchars($line['branch_address'] ?? '') ?></small></td>
+                    <td class="hide-mobile"><span class="mono" style="font-size:0.78rem"><?= htmlspecialchars($line['provider'] ?? '—') ?></span></td>
+                    <td class="mono hide-mobile"><?= htmlspecialchars($line['ip_address']) ?></td>
                     <td>
                         <span class="badge-status <?= $line['status'] ?>" id="status-<?= $line['id'] ?>">
                             <span class="dot"></span><?= ucfirst($line['status']) ?>
@@ -115,7 +115,7 @@ $filterCustomers = $customersStmt->fetchAll(PDO::FETCH_ASSOC);
                             <?= $line['avg_response_time'] ? round($line['avg_response_time'], 1) . ' ms' : '—' ?>
                         </span>
                     </td>
-                    <td class="muted" id="lc-<?= $line['id'] ?>"><?= $line['last_check'] ? date('d/m H:i:s', strtotime($line['last_check'])) : 'Never' ?></td>
+                    <td class="muted hide-mobile" id="lc-<?= $line['id'] ?>"><?= $line['last_check'] ? date('d/m H:i:s', strtotime($line['last_check'])) : 'Never' ?></td>
                 </tr>
                 <?php endforeach; ?>
                 <?php else: ?>

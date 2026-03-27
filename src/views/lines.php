@@ -36,16 +36,16 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
                 <tr>
                     <th>#</th>
                     <th>Mã CH</th>
-                    <th id="thKH" class="kh-col">KH</th>
-                    <th>Store</th>
-                    <th>Địa chỉ</th>
-                    <th>NCC</th>
-                    <th>Account ISP</th>
-                    <th>IP Tĩnh</th>
-                    <th>SĐT</th>
-                    <th>Liên lạc KT</th>
-                    <th>On net</th>
-                    <th>Hết hạn</th>
+                    <th class="hide-mobile">Khách hàng</th>
+                    <th>Line Name</th>
+                    <th class="hide-mobile">Địa chỉ</th>
+                    <th class="hide-mobile">NCC</th>
+                    <th class="hide-mobile">Account</th>
+                    <th class="hide-mobile">IP Tĩnh</th>
+                    <th class="hide-mobile">SĐT</th>
+                    <th class="hide-mobile">Kỹ thuật</th>
+                    <th class="hide-mobile">On Net</th>
+                    <th class="hide-mobile">Hạn dùng</th>
                     <th></th>
                 </tr>
             </thead>
@@ -54,16 +54,16 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
                 <tr data-cid="<?= $line['customer_id'] ?? '' ?>" data-scode="<?= htmlspecialchars(strtolower($line['store_code'] ?? '')) ?>">
                     <td class="rn"><?= $i + 1 ?></td>
                     <td class="mono"><?= htmlspecialchars($line['store_code'] ?? '') ?: '—' ?></td>
-                    <td class="kh-col nw"><?= htmlspecialchars($line['customer_name_rel'] ?? $line['customer_name'] ?? '—') ?></td>
+                    <td class="kh-col nw hide-mobile"><?= htmlspecialchars($line['customer_name_rel'] ?? $line['customer_name'] ?? '—') ?></td>
                     <td class="nw"><strong><?= htmlspecialchars($line['name']) ?></strong></td>
-                    <td class="dim" style="min-width:140px"><?= htmlspecialchars($line['branch_address'] ?? '') ?></td>
-                    <td class="mono nw"><?= htmlspecialchars($line['provider'] ?? '') ?: '—' ?></td>
-                    <td class="mono"><?= htmlspecialchars($line['isp_account'] ?? '') ?: '—' ?></td>
-                    <td class="mono nw"><?= htmlspecialchars($line['ip_address']) ?></td>
-                    <td class="dim nw"><?= htmlspecialchars($line['phone'] ?? '') ?: '—' ?></td>
-                    <td class="dim nw"><?= htmlspecialchars($line['regional_contact'] ?? '') ?: '—' ?></td>
-                    <td class="dim nw"><?= $line['on_net'] ? date('d/m/Y', strtotime($line['on_net'])) : '—' ?></td>
-                    <td class="nw"><?php if ($line['expiry_date']): $exp=strtotime($line['expiry_date']); $d=floor(($exp-time())/86400); $cl=$d<=30?'#f87171':($d<=90?'#fbbf24':'rgba(255,255,255,0.45)'); ?><span style="color:<?=$cl?>"><?=date('d/m/Y',$exp)?></span><?php else: ?>—<?php endif; ?></td>
+                    <td class="dim hide-mobile" style="min-width:140px"><?= htmlspecialchars($line['branch_address'] ?? '') ?></td>
+                    <td class="mono nw hide-mobile"><?= htmlspecialchars($line['provider'] ?? '') ?: '—' ?></td>
+                    <td class="mono hide-mobile"><?= htmlspecialchars($line['isp_account'] ?? '') ?: '—' ?></td>
+                    <td class="mono nw hide-mobile"><?= htmlspecialchars($line['ip_address']) ?></td>
+                    <td class="dim nw hide-mobile"><?= htmlspecialchars($line['phone'] ?? '') ?: '—' ?></td>
+                    <td class="dim nw hide-mobile"><?= htmlspecialchars($line['regional_contact'] ?? '') ?: '—' ?></td>
+                    <td class="dim nw hide-mobile"><?= $line['on_net'] ? date('d/m/Y', strtotime($line['on_net'])) : '—' ?></td>
+                    <td class="nw hide-mobile"><?php if ($line['expiry_date']): $exp=strtotime($line['expiry_date']); $d=floor(($exp-time())/86400); $cl=$d<=30?'#f87171':($d<=90?'#fbbf24':'rgba(255,255,255,0.45)'); ?><span style="color:<?=$cl?>"><?=date('d/m/Y',$exp)?></span><?php else: ?>—<?php endif; ?></td>
 
                     <?php if ($user->hasPermission($currentUser['id'], 'manage_lines')): ?>
                     <td>

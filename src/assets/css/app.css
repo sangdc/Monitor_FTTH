@@ -238,8 +238,30 @@ body {
 
 /* ============ Responsive ============ */
 @media (max-width: 768px) {
-    .status-grid { grid-template-columns: repeat(2, 1fr); }
-    .app-content { padding: 16px; }
-    .main-nav { display: none; }
-    .top-bar { padding: 0 12px; }
+    .app-content { padding: 12px; }
+    .page-header { flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+    .page-header div { width: 100%; justify-content: space-between; gap: 8px; }
+    .btn-primary-dark { padding: 8px 14px; font-size: 0.78rem; white-space: nowrap; }
+
+    /* Top Bar */
+    .top-bar { height: auto; padding: 10px 16px; flex-wrap: wrap; gap: 10px; }
+    .main-nav { display: none; } /* Hide main nav text on mobile, or could use icons only */
+    .user-info { display: none; } /* Hide user info to save space */
+    .brand-name { font-size: 0.9rem; }
+
+    /* Status Grid */
+    .status-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .status-card { padding: 12px; }
+    .status-card .count { font-size: 1.5rem; }
+    .status-card .label { font-size: 0.6rem; }
+
+    /* Table Responsiveness */
+    .hide-mobile { display: none !important; }
+
+    .tbl th, .tbl td { padding: 10px 8px; font-size: 0.78rem; }
+}
+
+@media (max-width: 480px) {
+    .status-grid { grid-template-columns: 1fr 1fr; }
+    .status-card.total { grid-column: span 2; } /* Total card full width */
 }
