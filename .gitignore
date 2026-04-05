@@ -18,6 +18,13 @@ Thumbs.db
 
 # Logs
 *.log
+logs/
+src/logs/
+
+# SQL dumps (large files)
+src/config/Mysql/ftth_monitor_0504.sql
+src/config/Mysql/ftth_monitor_0504_v2.sql
+src/config/Mysql/ftth_monitor_nolog.sql
 
 # Dependencies
 vendor/

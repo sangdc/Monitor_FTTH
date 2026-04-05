@@ -1,0 +1,3 @@
+line_id,line_name,ip,status,response_time,message,checked_at
+28,"FTTH Viettel",115.77.189.31,up,21.781,OK,"2026-04-05 23:47:44"
+28,"FTTH Viettel",115.77.189.31,up,14.509,OK,"2026-04-05 23:48:26"

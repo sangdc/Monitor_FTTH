@@ -96,7 +96,7 @@ class FtthLine {
         return $stmt->execute([$id]);
     }
 
-    public function updateStatus($id, $status, $responseTime = null, $message = null, $lineName = '', $ip = '') {
+    public function updateStatus($id, $status, $responseTime = null, $message = null, $lineName = '', $ip = '', $customerName = '') {
         $now = date('Y-m-d H:i:s');
         
         // Update line status in DB
@@ -106,10 +106,12 @@ class FtthLine {
             WHERE id = ?");
         $stmt->execute([$status, $now, $responseTime, $status, $now, $status, $now, $id]);
 
-        // Write to daily CSV (no DB history)
+        // Write to daily CSV: logs/CustomerName/StoreName/YYYY-MM-DD.csv
         $logDir = '/var/www/html/logs';
-        if (!is_dir($logDir)) @mkdir($logDir, 0755, true);
-        $csvFile = $logDir . '/' . date('Y-m-d') . '.csv';
+        $sanitize = function($s) { return preg_replace('/[\/\\\\:*?"<>|]+/', '_', trim($s ?: 'Unknown')); };
+        $custDir = $logDir . '/' . $sanitize($customerName) . '/' . $sanitize($lineName);
+        if (!is_dir($custDir)) @mkdir($custDir, 0755, true);
+        $csvFile = $custDir . '/' . date('Y-m-d') . '.csv';
         $isNew = !file_exists($csvFile);
         $fp = @fopen($csvFile, 'a');
         if ($fp) {

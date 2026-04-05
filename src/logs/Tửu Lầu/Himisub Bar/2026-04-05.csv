@@ -1,0 +1,3 @@
+line_id,line_name,ip,status,response_time,message,checked_at
+32,"Himisub Bar",14.241.237.123,up,25.595,OK,"2026-04-05 23:47:43"
+32,"Himisub Bar",14.241.237.123,up,14.995,OK,"2026-04-05 23:48:25"

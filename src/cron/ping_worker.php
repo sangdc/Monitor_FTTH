@@ -54,7 +54,8 @@ while (true) {
                 $responseTime,
                 $result['success'] ? 'OK' : 'Timeout/Unreachable',
                 $line['name'],
-                $line['ip_address']
+                $line['ip_address'],
+                $line['customer_name_rel'] ?? ''
             );
 
             if ($status === 'up')
