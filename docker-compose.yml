@@ -51,6 +51,7 @@ services:
     container_name: ftth_cron
     volumes:
       - ./src:/var/www/html
+      - ./logs:/var/www/html/logs
     depends_on:
       - mysql
     environment:

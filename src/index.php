@@ -47,10 +47,10 @@ if ($action === 'api_refresh_status') {
         SUM(CASE WHEN status = 'warning' THEN 1 ELSE 0 END) as warning_count,
         SUM(CASE WHEN status = 'paused' THEN 1 ELSE 0 END) as paused_count,
         SUM(CASE WHEN status = 'unknown' THEN 1 ELSE 0 END) as unknown_count
-        FROM ftth_lines WHERE active = 1");
+        FROM ftth_lines WHERE active = 1 AND is_dynamic_ip = 0");
     $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
     
-    $lines = $ftthLine->getAll();
+    $lines = $ftthLine->getMonitored();
     foreach ($lines as &$l) {
         $l['last_check_fmt'] = $l['last_check'] ? date('d/m H:i:s', strtotime($l['last_check'])) : 'Never';
     }
@@ -131,9 +131,9 @@ switch ($action) {
             SUM(CASE WHEN status = 'warning' THEN 1 ELSE 0 END) as warning_count,
             SUM(CASE WHEN status = 'paused' THEN 1 ELSE 0 END) as paused_count,
             SUM(CASE WHEN status = 'unknown' THEN 1 ELSE 0 END) as unknown_count
-            FROM ftth_lines WHERE active = 1");
+            FROM ftth_lines WHERE active = 1 AND is_dynamic_ip = 0");
         $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
-        $lines = $ftthLine->getAll();
+        $lines = $ftthLine->getMonitored();
         $pingInterval = $setting->get('ping_interval', '30');
         
         // Monthly stats: down/recovery count per line

@@ -41,7 +41,8 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
                     <th class="hide-mobile">Địa chỉ</th>
                     <th class="hide-mobile">NCC</th>
                     <th class="hide-mobile">Account</th>
-                    <th class="hide-mobile">IP Tĩnh</th>
+                    <th class="hide-mobile">IP</th>
+                    <th>Loại</th>
                     <th class="hide-mobile">SĐT</th>
                     <th class="hide-mobile">Kỹ thuật</th>
                     <th class="hide-mobile">On Net</th>
@@ -59,7 +60,14 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
                     <td class="dim hide-mobile" style="min-width:140px"><?= htmlspecialchars($line['branch_address'] ?? '') ?></td>
                     <td class="mono nw hide-mobile"><?= htmlspecialchars($line['provider'] ?? '') ?: '—' ?></td>
                     <td class="mono hide-mobile"><?= htmlspecialchars($line['isp_account'] ?? '') ?: '—' ?></td>
-                    <td class="mono nw hide-mobile"><?= htmlspecialchars($line['ip_address']) ?></td>
+                    <td class="mono nw hide-mobile"><?= htmlspecialchars($line['ip_address'] ?? '') ?: '—' ?></td>
+                    <td class="nw" style="text-align:center">
+                        <?php if (!empty($line['is_dynamic_ip'])): ?>
+                            <span style="background:#f59e0b;color:#000;padding:2px 8px;border-radius:4px;font-size:0.65rem;font-weight:600">Động</span>
+                        <?php else: ?>
+                            <span style="background:#22c55e;color:#000;padding:2px 8px;border-radius:4px;font-size:0.65rem;font-weight:600">Tĩnh</span>
+                        <?php endif; ?>
+                    </td>
                     <td class="dim nw hide-mobile"><?= htmlspecialchars($line['phone'] ?? '') ?: '—' ?></td>
                     <td class="dim nw hide-mobile"><?= htmlspecialchars($line['regional_contact'] ?? '') ?: '—' ?></td>
                     <td class="dim nw hide-mobile"><?= $line['on_net'] ? date('d/m/Y', strtotime($line['on_net'])) : '—' ?></td>
@@ -137,8 +145,18 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
                             <input type="text" class="form-control" name="isp_account" id="lineAccount" placeholder="Tài khoản ISP" style="font-family:'JetBrains Mono',monospace;font-size:0.85rem">
                         </div>
                         <div class="col-md-5 mb-3">
-                            <label class="form-label">IP Tĩnh *</label>
-                            <input type="text" class="form-control" name="ip_address" id="lineIP" required placeholder="VD: 113.161.x.x" style="font-family:'JetBrains Mono',monospace">
+                            <label class="form-label">IP <small id="ipLabel" style="color:rgba(255,255,255,0.4)">(Tĩnh)</small></label>
+                            <input type="text" class="form-control" name="ip_address" id="lineIP" placeholder="VD: 113.161.x.x" style="font-family:'JetBrains Mono',monospace">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <div class="form-check" style="display:flex;align-items:center;gap:8px">
+                                <input class="form-check-input" type="checkbox" name="is_dynamic_ip" id="lineDynamic" value="1" onchange="toggleDynamicIP()" style="width:18px;height:18px;cursor:pointer">
+                                <label class="form-check-label" for="lineDynamic" style="cursor:pointer;font-size:0.85rem">
+                                    <i class="fas fa-random" style="color:#f59e0b;margin-right:4px"></i> IP Động (không giám sát ping)
+                                </label>
+                            </div>
                         </div>
                     </div>
                     <div class="row">
@@ -275,6 +293,25 @@ function resetLineForm() {
     document.getElementById('customerSearch').value = '';
     document.getElementById('lineMethod').value = 'ping';
     document.getElementById('lineProvider').value = '';
+    document.getElementById('lineDynamic').checked = false;
+    toggleDynamicIP();
+}
+
+function toggleDynamicIP() {
+    const isDynamic = document.getElementById('lineDynamic').checked;
+    const ipField = document.getElementById('lineIP');
+    const ipLabel = document.getElementById('ipLabel');
+    if (isDynamic) {
+        ipField.removeAttribute('required');
+        ipField.placeholder = 'Tuỳ chọn (IP Động)';
+        ipLabel.textContent = '(Động - tuỳ chọn)';
+        ipLabel.style.color = '#f59e0b';
+    } else {
+        ipField.setAttribute('required', 'required');
+        ipField.placeholder = 'VD: 113.161.x.x';
+        ipLabel.textContent = '(Tĩnh)';
+        ipLabel.style.color = 'rgba(255,255,255,0.4)';
+    }
 }
 
 function editLine(l) {
@@ -294,6 +331,8 @@ function editLine(l) {
     document.getElementById('lineRegContact').value = l.regional_contact || '';
     document.getElementById('lineOnNet').value = l.on_net || '';
     document.getElementById('lineExpiry').value = l.expiry_date || '';
+    document.getElementById('lineDynamic').checked = !!parseInt(l.is_dynamic_ip);
+    toggleDynamicIP();
     if (l.customer_id) {
         document.getElementById('lineCustomerId').value = l.customer_id;
         document.getElementById('customerSearch').value = l.customer_name_rel || l.customer_name || '';

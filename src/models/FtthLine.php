@@ -16,6 +16,15 @@ class FtthLine {
         return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function getMonitored() {
+        $sql = "SELECT l.*, c.name as customer_name_rel
+                FROM ftth_lines l
+                LEFT JOIN customers c ON l.customer_id = c.id
+                WHERE l.active = 1 AND l.is_dynamic_ip = 0
+                ORDER BY CAST(l.store_code AS UNSIGNED) ASC, l.store_code ASC, c.name ASC, l.name ASC";
+        return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function get($id) {
         $stmt = $this->pdo->prepare("SELECT l.*, c.name as customer_name_rel
             FROM ftth_lines l
@@ -27,12 +36,12 @@ class FtthLine {
 
     public function create($data) {
         $stmt = $this->pdo->prepare("INSERT INTO ftth_lines 
-            (name, store_code, ip_address, provider, isp_account, check_method, customer_id, branch_name, branch_address, phone, regional_contact, on_net, expiry_date, notes, contract_id, olt_info, created_by) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            (name, store_code, ip_address, provider, isp_account, check_method, customer_id, branch_name, branch_address, phone, regional_contact, on_net, expiry_date, notes, contract_id, olt_info, is_dynamic_ip, created_by) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([
             $data['name'],
             $data['store_code'] ?? null,
-            $data['ip_address'],
+            $data['ip_address'] ?: null,
             $data['provider'] ?? null,
             $data['isp_account'] ?? null,
             $data['check_method'] ?? 'ping',
@@ -46,6 +55,7 @@ class FtthLine {
             $data['notes'] ?? null,
             $data['contract_id'] ?? null,
             $data['olt_info'] ?? null,
+            isset($data['is_dynamic_ip']) ? 1 : 0,
             $data['created_by'] ?? null
         ]);
         return $this->pdo->lastInsertId();
@@ -57,12 +67,12 @@ class FtthLine {
             check_method = ?,
             customer_id = ?, branch_name = ?, branch_address = ?,
             phone = ?, regional_contact = ?, on_net = ?, expiry_date = ?, notes = ?,
-            contract_id = ?, olt_info = ?
+            contract_id = ?, olt_info = ?, is_dynamic_ip = ?
             WHERE id = ?");
         return $stmt->execute([
             $data['name'],
             $data['store_code'] ?? null,
-            $data['ip_address'],
+            $data['ip_address'] ?: null,
             $data['provider'] ?? null,
             $data['isp_account'] ?? null,
             $data['check_method'] ?? 'ping',
@@ -76,6 +86,7 @@ class FtthLine {
             $data['notes'] ?? null,
             $data['contract_id'] ?? null,
             $data['olt_info'] ?? null,
+            isset($data['is_dynamic_ip']) ? 1 : 0,
             $id
         ]);
     }
@@ -85,23 +96,27 @@ class FtthLine {
         return $stmt->execute([$id]);
     }
 
-    public function updateStatus($id, $status, $responseTime = null, $message = null) {
+    public function updateStatus($id, $status, $responseTime = null, $message = null, $lineName = '', $ip = '') {
         $now = date('Y-m-d H:i:s');
         
-        // Update line status
-        $updates = ['status' => $status, 'last_check' => $now, 'avg_response_time' => $responseTime];
-        if ($status === 'up') $updates['last_up'] = $now;
-        if ($status === 'down') $updates['last_down'] = $now;
-
+        // Update line status in DB
         $stmt = $this->pdo->prepare("UPDATE ftth_lines SET status = ?, last_check = ?, avg_response_time = ?, 
             last_up = CASE WHEN ? = 'up' THEN ? ELSE last_up END,
             last_down = CASE WHEN ? = 'down' THEN ? ELSE last_down END
             WHERE id = ?");
         $stmt->execute([$status, $now, $responseTime, $status, $now, $status, $now, $id]);
 
-        // Insert history record
-        $histStmt = $this->pdo->prepare("INSERT INTO ftth_line_history (line_id, status, response_time, message) VALUES (?, ?, ?, ?)");
-        $histStmt->execute([$id, $status, $responseTime, $message]);
+        // Write to daily CSV (no DB history)
+        $logDir = '/var/www/html/logs';
+        if (!is_dir($logDir)) @mkdir($logDir, 0755, true);
+        $csvFile = $logDir . '/' . date('Y-m-d') . '.csv';
+        $isNew = !file_exists($csvFile);
+        $fp = @fopen($csvFile, 'a');
+        if ($fp) {
+            if ($isNew) fputcsv($fp, ['line_id','line_name','ip','status','response_time','message','checked_at']);
+            fputcsv($fp, [$id, $lineName, $ip, $status, $responseTime, $message, $now]);
+            fclose($fp);
+        }
     }
 
     public function ping($ip) {

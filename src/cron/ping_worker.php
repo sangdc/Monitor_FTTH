@@ -37,8 +37,8 @@ while (true) {
 
         echo "[" . date('Y-m-d H:i:s') . "] Ping cycle starting (interval: {$interval}s)\n";
 
-        // Get all active lines
-        $lines = $ftthLine->getAll();
+        // Get all MONITORED lines (exclude dynamic IP)
+        $lines = $ftthLine->getMonitored();
         $upCount = 0;
         $downCount = 0;
 
@@ -47,12 +47,14 @@ while (true) {
             $status = $result['success'] ? 'up' : 'down';
             $responseTime = $result['response_time'];
 
-            // Update status in DB
+            // Update status in DB + write to CSV
             $ftthLine->updateStatus(
                 $line['id'],
                 $status,
                 $responseTime,
-                $result['success'] ? 'OK' : 'Timeout/Unreachable'
+                $result['success'] ? 'OK' : 'Timeout/Unreachable',
+                $line['name'],
+                $line['ip_address']
             );
 
             if ($status === 'up')
