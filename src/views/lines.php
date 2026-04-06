@@ -6,6 +6,8 @@ showFlash();
 $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c INNER JOIN ftth_lines l ON l.customer_id = c.id AND l.active = 1 ORDER BY c.name")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
+<style>.app-content { max-width: 1800px !important; }</style>
+
 <div class="page-header">
     <div class="page-title"><i class="fas fa-network-wired"></i> Quản lý</div>
     <div style="display:flex;align-items:center;gap:10px">
