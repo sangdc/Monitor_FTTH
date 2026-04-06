@@ -126,6 +126,10 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
                 </tbody>
             </table>
         </div>
+        <div id="paginationBar" style="display:none;padding:12px 16px;border-top:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center">
+            <span id="pageInfo" style="font-size:0.75rem;color:rgba(255,255,255,0.4)"></span>
+            <div id="pageButtons" style="display:flex;gap:4px"></div>
+        </div>
     <?php else: ?>
         <div class="empty-state"><i class="fas fa-network-wired"></i>
             <p>Chưa có line FTTH nào</p>
@@ -362,9 +366,17 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
         color: #06b6d4;
     }
 
-    .sortable.active-sort {
-        color: #06b6d4;
+    .sortable.active-sort { color: #06b6d4; }
+
+    .page-btn {
+        padding: 4px 10px; border-radius: 4px; cursor: pointer;
+        font-size: 0.75rem; border: 1px solid rgba(255,255,255,0.1);
+        background: transparent; color: rgba(255,255,255,0.5);
+        transition: all 0.15s;
     }
+    .page-btn:hover { border-color: #06b6d4; color: #06b6d4; }
+    .page-btn.active { background: #06b6d4; color: #000; border-color: #06b6d4; font-weight: 600; }
+    .page-btn:disabled { opacity: 0.3; cursor: default; }
 
     .ip-type-btn {
         display: inline-flex;
@@ -416,6 +428,59 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
     let ddVisible = false;
     let currentSort = 'expiry';
     let sortAsc = true;
+    const PAGE_SIZE = 50;
+    let currentPage = 1;
+
+    function getVisibleRows() {
+        return Array.from(document.querySelectorAll('#linesBody tr[data-cid]')).filter(r => r.dataset.filtered !== 'true');
+    }
+
+    function renderPagination() {
+        const rows = getVisibleRows();
+        const total = rows.length;
+        const bar = document.getElementById('paginationBar');
+        const info = document.getElementById('pageInfo');
+        const btns = document.getElementById('pageButtons');
+        
+        if (total <= PAGE_SIZE) {
+            bar.style.display = 'none';
+            rows.forEach(r => r.style.display = '');
+            return;
+        }
+        
+        bar.style.display = 'flex';
+        const totalPages = Math.ceil(total / PAGE_SIZE);
+        if (currentPage > totalPages) currentPage = totalPages;
+        
+        const start = (currentPage - 1) * PAGE_SIZE;
+        const end = start + PAGE_SIZE;
+        
+        rows.forEach((r, i) => {
+            r.style.display = (i >= start && i < end) ? '' : 'none';
+            if (i >= start && i < end) r.querySelector('.rn').textContent = i + 1;
+        });
+        
+        info.textContent = `Hi\u1EC3n ${start+1}-${Math.min(end,total)} / ${total} lines`;
+        
+        let html = `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}><i class="fas fa-chevron-left"></i></button>`;
+        for (let p = 1; p <= totalPages; p++) {
+            if (totalPages > 7 && p > 2 && p < totalPages - 1 && Math.abs(p - currentPage) > 1) {
+                if (p === 3 || p === totalPages - 2) html += '<span style="color:rgba(255,255,255,0.3);padding:0 4px">...</span>';
+                continue;
+            }
+            html += `<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`;
+        }
+        html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}><i class="fas fa-chevron-right"></i></button>`;
+        btns.innerHTML = html;
+    }
+
+    function goPage(p) {
+        const rows = getVisibleRows();
+        const totalPages = Math.ceil(rows.length / PAGE_SIZE);
+        if (p < 1 || p > totalPages) return;
+        currentPage = p;
+        renderPagination();
+    }
 
     function sortTable(col) {
         const tbody = document.getElementById('linesBody');
@@ -462,16 +527,17 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
             icon.style.opacity = '0.6';
         }
 
-        // Re-apply customer filter
+        // Re-apply customer filter then paginate
+        currentPage = 1;
         const cf = document.getElementById('customerFilter').value;
-        if (cf) filterTable();
+        const sc = document.getElementById('searchStoreCode').value;
+        if (cf || sc) filterTable(); else renderPagination();
     }
 
     function filterTable() {
         const cid = document.getElementById('customerFilter').value;
         const scode = document.getElementById('searchStoreCode').value.toLowerCase().trim();
-        const rows = document.querySelectorAll('#linesBody tr');
-        let idx = 0;
+        const rows = document.querySelectorAll('#linesBody tr[data-cid]');
 
         // Toggle KH column visibility
         const show = !cid;
@@ -481,15 +547,12 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
         rows.forEach(row => {
             const matchCust = !cid || row.dataset.cid === cid;
             const matchCode = !scode || (row.dataset.scode && row.dataset.scode.includes(scode));
-            if (matchCust && matchCode) {
-                row.style.display = '';
-                idx++;
-                row.querySelector('.rn').textContent = idx;
-            } else {
-                row.style.display = 'none';
-            }
+            row.dataset.filtered = (matchCust && matchCode) ? 'false' : 'true';
+            row.style.display = '';
         });
 
+        currentPage = 1;
+        renderPagination();
         localStorage.setItem('ftth_lines_customer', cid);
     }
 
@@ -591,10 +654,11 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
         }
     });
 
-    // Init: restore filter
+    // Init: restore filter + pagination
     (function () {
         const saved = localStorage.getItem('ftth_lines_customer');
         if (saved) { document.getElementById('customerFilter').value = saved; filterTable(); }
+        else { renderPagination(); }
     })();
 </script>
 
