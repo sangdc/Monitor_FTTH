@@ -12,7 +12,7 @@ class FtthLine {
                 FROM ftth_lines l
                 LEFT JOIN customers c ON l.customer_id = c.id
                 WHERE l.active = 1
-                ORDER BY CAST(l.store_code AS UNSIGNED) ASC, l.store_code ASC, c.name ASC, l.name ASC";
+                ORDER BY l.expiry_date IS NULL ASC, l.expiry_date ASC, CAST(l.store_code AS UNSIGNED) ASC, l.store_code ASC";
         return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -20,7 +20,7 @@ class FtthLine {
         $sql = "SELECT l.*, c.name as customer_name_rel
                 FROM ftth_lines l
                 LEFT JOIN customers c ON l.customer_id = c.id
-                WHERE l.active = 1 AND l.is_dynamic_ip = 0
+                WHERE l.active = 1 AND l.ip_type = 'static'
                 ORDER BY CAST(l.store_code AS UNSIGNED) ASC, l.store_code ASC, c.name ASC, l.name ASC";
         return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -36,7 +36,7 @@ class FtthLine {
 
     public function create($data) {
         $stmt = $this->pdo->prepare("INSERT INTO ftth_lines 
-            (name, store_code, ip_address, provider, isp_account, check_method, customer_id, branch_name, branch_address, phone, regional_contact, on_net, expiry_date, notes, contract_id, olt_info, is_dynamic_ip, created_by) 
+            (name, store_code, ip_address, provider, isp_account, check_method, customer_id, branch_name, branch_address, phone, regional_contact, on_net, expiry_date, notes, contract_id, olt_info, ip_type, created_by) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([
             $data['name'],
@@ -55,7 +55,7 @@ class FtthLine {
             $data['notes'] ?? null,
             $data['contract_id'] ?? null,
             $data['olt_info'] ?? null,
-            isset($data['is_dynamic_ip']) ? 1 : 0,
+            $data['ip_type'] ?? 'static',
             $data['created_by'] ?? null
         ]);
         return $this->pdo->lastInsertId();
@@ -67,7 +67,7 @@ class FtthLine {
             check_method = ?,
             customer_id = ?, branch_name = ?, branch_address = ?,
             phone = ?, regional_contact = ?, on_net = ?, expiry_date = ?, notes = ?,
-            contract_id = ?, olt_info = ?, is_dynamic_ip = ?
+            contract_id = ?, olt_info = ?, ip_type = ?
             WHERE id = ?");
         return $stmt->execute([
             $data['name'],
@@ -86,7 +86,7 @@ class FtthLine {
             $data['notes'] ?? null,
             $data['contract_id'] ?? null,
             $data['olt_info'] ?? null,
-            isset($data['is_dynamic_ip']) ? 1 : 0,
+            $data['ip_type'] ?? 'static',
             $id
         ]);
     }

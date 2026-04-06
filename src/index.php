@@ -47,7 +47,7 @@ if ($action === 'api_refresh_status') {
         SUM(CASE WHEN status = 'warning' THEN 1 ELSE 0 END) as warning_count,
         SUM(CASE WHEN status = 'paused' THEN 1 ELSE 0 END) as paused_count,
         SUM(CASE WHEN status = 'unknown' THEN 1 ELSE 0 END) as unknown_count
-        FROM ftth_lines WHERE active = 1 AND is_dynamic_ip = 0");
+        FROM ftth_lines WHERE active = 1 AND ip_type = 'static'");
     $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
     
     $lines = $ftthLine->getMonitored();
@@ -131,7 +131,7 @@ switch ($action) {
             SUM(CASE WHEN status = 'warning' THEN 1 ELSE 0 END) as warning_count,
             SUM(CASE WHEN status = 'paused' THEN 1 ELSE 0 END) as paused_count,
             SUM(CASE WHEN status = 'unknown' THEN 1 ELSE 0 END) as unknown_count
-            FROM ftth_lines WHERE active = 1 AND is_dynamic_ip = 0");
+            FROM ftth_lines WHERE active = 1 AND ip_type = 'static'");
         $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
         $lines = $ftthLine->getMonitored();
         $pingInterval = $setting->get('ping_interval', '30');
