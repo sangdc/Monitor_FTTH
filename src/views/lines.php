@@ -39,25 +39,28 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>Mã Kênh</th>
-                        <th class="hide-mobile" id="thKH">Khách hàng</th>
+                        <th class="sortable" onclick="sortTable('scode')" id="sort-scode">Mã Kênh <i class="fas fa-sort" style="opacity:0.3;font-size:0.55rem"></i></th>
+                        <th class="hide-mobile sortable" id="thKH" onclick="sortTable('customer')">Khách hàng <i class="fas fa-sort" style="opacity:0.3;font-size:0.55rem"></i></th>
                         <th>Line Name</th>
                         <th class="hide-mobile">Địa chỉ</th>
                         <th class="hide-mobile">NCC</th>
                         <th class="hide-mobile">Account</th>
                         <th class="hide-mobile">IP</th>
-                        <th>Loại</th>
+                        <th class="sortable" onclick="sortTable('iptype')" id="sort-iptype">Loại <i class="fas fa-sort" style="opacity:0.3;font-size:0.55rem"></i></th>
                         <th class="hide-mobile">SĐT</th>
                         <th class="hide-mobile">Kỹ thuật</th>
                         <th class="hide-mobile">On Net</th>
-                        <th class="hide-mobile">Hạn dùng</th>
+                        <th class="hide-mobile sortable active-sort" onclick="sortTable('expiry')" id="sort-expiry">Hạn dùng <i class="fas fa-sort-up" style="opacity:0.6;font-size:0.55rem"></i></th>
                         <th></th>
                     </tr>
                 </thead>
                 <tbody id="linesBody">
                     <?php foreach ($lines as $i => $line): ?>
                         <tr data-cid="<?= $line['customer_id'] ?? '' ?>"
-                            data-scode="<?= htmlspecialchars(strtolower($line['store_code'] ?? '')) ?>">
+                            data-scode="<?= htmlspecialchars(strtolower($line['store_code'] ?? '')) ?>"
+                            data-customer="<?= htmlspecialchars(strtolower($line['customer_name_rel'] ?? $line['customer_name'] ?? '')) ?>"
+                            data-iptype="<?= htmlspecialchars($line['ip_type'] ?? 'static') ?>"
+                            data-expiry="<?= $line['expiry_date'] ?? '9999-12-31' ?>">
                             <td class="rn"><?= $i + 1 ?></td>
                             <td class="mono"><?= htmlspecialchars($line['store_code'] ?? '') ?: '—' ?></td>
                             <td class="kh-col nw hide-mobile">
@@ -328,11 +331,67 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
         color: rgba(255, 255, 255, 0.3);
         font-size: 0.82rem;
     }
+
+    .sortable { cursor: pointer; user-select: none; }
+    .sortable:hover { color: #06b6d4; }
+    .sortable.active-sort { color: #06b6d4; }
 </style>
 
 <script>
     const allCustomers = <?= json_encode($customers_list) ?>;
     let ddVisible = false;
+    let currentSort = 'expiry';
+    let sortAsc = true;
+
+    function sortTable(col) {
+        const tbody = document.getElementById('linesBody');
+        const rows = Array.from(tbody.querySelectorAll('tr[data-cid]'));
+        
+        // Toggle direction
+        if (currentSort === col) { sortAsc = !sortAsc; } else { currentSort = col; sortAsc = true; }
+        
+        rows.sort((a, b) => {
+            let va = '', vb = '';
+            if (col === 'scode') {
+                va = parseInt(a.dataset.scode) || 99999;
+                vb = parseInt(b.dataset.scode) || 99999;
+                return sortAsc ? va - vb : vb - va;
+            } else if (col === 'customer') {
+                va = a.dataset.customer || 'zzz';
+                vb = b.dataset.customer || 'zzz';
+            } else if (col === 'iptype') {
+                const order = {static:0, dynamic:1, sim:2};
+                va = order[a.dataset.iptype] ?? 3;
+                vb = order[b.dataset.iptype] ?? 3;
+                return sortAsc ? va - vb : vb - va;
+            } else if (col === 'expiry') {
+                va = a.dataset.expiry || '9999-12-31';
+                vb = b.dataset.expiry || '9999-12-31';
+            }
+            const cmp = va < vb ? -1 : (va > vb ? 1 : 0);
+            return sortAsc ? cmp : -cmp;
+        });
+        
+        rows.forEach((r, i) => {
+            tbody.appendChild(r);
+            r.querySelector('.rn').textContent = i + 1;
+        });
+        
+        // Update header icons
+        document.querySelectorAll('.sortable i').forEach(i => { i.className = 'fas fa-sort'; i.style.opacity = '0.3'; });
+        document.querySelectorAll('.sortable').forEach(th => th.classList.remove('active-sort'));
+        const th = document.getElementById('sort-' + col);
+        if (th) {
+            th.classList.add('active-sort');
+            const icon = th.querySelector('i');
+            icon.className = sortAsc ? 'fas fa-sort-up' : 'fas fa-sort-down';
+            icon.style.opacity = '0.6';
+        }
+        
+        // Re-apply customer filter
+        const cf = document.getElementById('customerFilter').value;
+        if (cf) filterTable();
+    }
 
     function filterTable() {
         const cid = document.getElementById('customerFilter').value;
