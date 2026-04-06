@@ -6,7 +6,11 @@ showFlash();
 $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c INNER JOIN ftth_lines l ON l.customer_id = c.id AND l.active = 1 ORDER BY c.name")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<style>.app-content { max-width: 1800px !important; }</style>
+<style>
+    .app-content {
+        max-width: 1800px !important;
+    }
+</style>
 
 <div class="page-header">
     <div class="page-title"><i class="fas fa-network-wired"></i> Quản lý</div>
@@ -41,18 +45,23 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th class="sortable" onclick="sortTable('scode')" id="sort-scode">Mã Kênh <i class="fas fa-sort" style="opacity:0.3;font-size:0.55rem"></i></th>
-                        <th class="hide-mobile sortable" id="thKH" onclick="sortTable('customer')">Khách hàng <i class="fas fa-sort" style="opacity:0.3;font-size:0.55rem"></i></th>
+                        <th class="sortable" onclick="sortTable('scode')" id="sort-scode">Mã Kênh <i class="fas fa-sort"
+                                style="opacity:0.3;font-size:0.55rem"></i></th>
+                        <th class="hide-mobile sortable" id="thKH" onclick="sortTable('customer')">Khách hàng <i
+                                class="fas fa-sort" style="opacity:0.3;font-size:0.55rem"></i></th>
                         <th>Line Name</th>
                         <th class="hide-mobile">Địa chỉ</th>
                         <th class="hide-mobile">NCC</th>
                         <th class="hide-mobile">Account</th>
                         <th class="hide-mobile">IP</th>
-                        <th class="sortable" onclick="sortTable('iptype')" id="sort-iptype">Loại <i class="fas fa-sort" style="opacity:0.3;font-size:0.55rem"></i></th>
+                        <th class="sortable" onclick="sortTable('iptype')" id="sort-iptype">Loại <i class="fas fa-sort"
+                                style="opacity:0.3;font-size:0.55rem"></i></th>
                         <th class="hide-mobile">SĐT</th>
                         <th class="hide-mobile">Kỹ thuật</th>
                         <th class="hide-mobile">On Net</th>
-                        <th class="hide-mobile sortable active-sort" onclick="sortTable('expiry')" id="sort-expiry">Hạn dùng <i class="fas fa-sort-up" style="opacity:0.6;font-size:0.55rem"></i></th>
+                        <th class="hide-mobile sortable active-sort" onclick="sortTable('expiry')" id="sort-expiry">Hạn dùng
+                            <i class="fas fa-sort-up" style="opacity:0.6;font-size:0.55rem"></i>
+                        </th>
                         <th></th>
                     </tr>
                 </thead>
@@ -132,7 +141,7 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
                 <h5 class="modal-title" id="lineModalTitle">Thêm FTTH Line</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="POST" action="?action=save_line">
+            <form method="POST" action="?action=save_line" id="lineForm">
                 <div class="modal-body">
                     <input type="hidden" name="id" id="lineId">
                     <input type="hidden" name="customer_id" id="lineCustomerId">
@@ -189,14 +198,24 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-8 mb-3">
                             <label class="form-label">Loại kết nối</label>
-                            <select class="form-control" name="ip_type" id="lineIpType" onchange="toggleIpType()">
-                                <option value="static">IP Tĩnh (giám sát ping)</option>
-                                <option value="dynamic">IP Động</option>
-                                <option value="sim">SIM 4G/5G</option>
-                                <option value="other">Khác...</option>
-                            </select>
+                            <input type="hidden" name="ip_type" id="lineIpType" value="static">
+                            <div style="display:flex;gap:8px;flex-wrap:wrap">
+                                <label class="ip-type-btn active" data-val="static"
+                                    onclick="selectIpType('static',this)">
+                                    <i class="fas fa-thumbtack"></i> IP Tĩnh
+                                </label>
+                                <label class="ip-type-btn" data-val="dynamic" onclick="selectIpType('dynamic',this)">
+                                    <i class="fas fa-random"></i> IP Động
+                                </label>
+                                <label class="ip-type-btn" data-val="sim" onclick="selectIpType('sim',this)">
+                                    <i class="fas fa-sim-card"></i> SIM 4G/5G
+                                </label>
+                                <label class="ip-type-btn" data-val="other" onclick="selectIpType('other',this)">
+                                    <i class="fas fa-ellipsis-h"></i> Khác
+                                </label>
+                            </div>
                         </div>
                         <div class="col-md-4 mb-3" id="customTypeWrap" style="display:none">
                             <label class="form-label">Nhập loại kết nối</label>
@@ -334,9 +353,62 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
         font-size: 0.82rem;
     }
 
-    .sortable { cursor: pointer; user-select: none; }
-    .sortable:hover { color: #06b6d4; }
-    .sortable.active-sort { color: #06b6d4; }
+    .sortable {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .sortable:hover {
+        color: #06b6d4;
+    }
+
+    .sortable.active-sort {
+        color: #06b6d4;
+    }
+
+    .ip-type-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.82rem;
+        font-weight: 500;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.03);
+        color: rgba(255, 255, 255, 0.5);
+        transition: all 0.2s;
+    }
+
+    .ip-type-btn:hover {
+        border-color: rgba(255, 255, 255, 0.25);
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .ip-type-btn.active[data-val="static"] {
+        border-color: #22c55e;
+        background: rgba(34, 197, 94, 0.12);
+        color: #4ade80;
+    }
+
+    .ip-type-btn.active[data-val="dynamic"] {
+        border-color: #f59e0b;
+        background: rgba(245, 158, 11, 0.12);
+        color: #fbbf24;
+    }
+
+    .ip-type-btn.active[data-val="sim"] {
+        border-color: #8b5cf6;
+        background: rgba(139, 92, 246, 0.12);
+        color: #a78bfa;
+    }
+
+    .ip-type-btn.active[data-val="other"] {
+        border-color: #64748b;
+        background: rgba(100, 116, 139, 0.12);
+        color: #94a3b8;
+    }
 </style>
 
 <script>
@@ -348,10 +420,10 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
     function sortTable(col) {
         const tbody = document.getElementById('linesBody');
         const rows = Array.from(tbody.querySelectorAll('tr[data-cid]'));
-        
+
         // Toggle direction
         if (currentSort === col) { sortAsc = !sortAsc; } else { currentSort = col; sortAsc = true; }
-        
+
         rows.sort((a, b) => {
             let va = '', vb = '';
             if (col === 'scode') {
@@ -362,7 +434,7 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
                 va = a.dataset.customer || 'zzz';
                 vb = b.dataset.customer || 'zzz';
             } else if (col === 'iptype') {
-                const order = {static:0, dynamic:1, sim:2};
+                const order = { static: 0, dynamic: 1, sim: 2 };
                 va = order[a.dataset.iptype] ?? 3;
                 vb = order[b.dataset.iptype] ?? 3;
                 return sortAsc ? va - vb : vb - va;
@@ -373,12 +445,12 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
             const cmp = va < vb ? -1 : (va > vb ? 1 : 0);
             return sortAsc ? cmp : -cmp;
         });
-        
+
         rows.forEach((r, i) => {
             tbody.appendChild(r);
             r.querySelector('.rn').textContent = i + 1;
         });
-        
+
         // Update header icons
         document.querySelectorAll('.sortable i').forEach(i => { i.className = 'fas fa-sort'; i.style.opacity = '0.3'; });
         document.querySelectorAll('.sortable').forEach(th => th.classList.remove('active-sort'));
@@ -389,7 +461,7 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
             icon.className = sortAsc ? 'fas fa-sort-up' : 'fas fa-sort-down';
             icon.style.opacity = '0.6';
         }
-        
+
         // Re-apply customer filter
         const cf = document.getElementById('customerFilter').value;
         if (cf) filterTable();
@@ -457,17 +529,18 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
         document.getElementById('lineProvider').value = '';
         document.getElementById('lineIpType').value = 'static';
         document.getElementById('lineCustomType').value = '';
-        toggleIpType();
+        selectIpType('static');
     }
 
-    function toggleIpType() {
-        const sel = document.getElementById('lineIpType');
+    function selectIpType(val, btn) {
+        document.getElementById('lineIpType').value = val;
+        document.querySelectorAll('.ip-type-btn').forEach(b => b.classList.remove('active'));
+        const target = btn || document.querySelector('.ip-type-btn[data-val="' + val + '"]');
+        if (target) target.classList.add('active');
+
+        document.getElementById('customTypeWrap').style.display = val === 'other' ? '' : 'none';
         const ipField = document.getElementById('lineIP');
-        const customWrap = document.getElementById('customTypeWrap');
-
-        customWrap.style.display = sel.value === 'other' ? '' : 'none';
-
-        if (sel.value === 'static') {
+        if (val === 'static') {
             ipField.setAttribute('required', 'required');
             ipField.placeholder = 'VD: 113.161.x.x';
         } else {
@@ -493,17 +566,15 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
         document.getElementById('lineRegContact').value = l.regional_contact || '';
         document.getElementById('lineOnNet').value = l.on_net || '';
         document.getElementById('lineExpiry').value = l.expiry_date || '';
-        // Set ip_type
+        // Set ip_type buttons
         const ipType = l.ip_type || 'static';
-        const sel = document.getElementById('lineIpType');
         if (['static', 'dynamic', 'sim', 'other'].includes(ipType)) {
-            sel.value = ipType;
+            selectIpType(ipType);
             document.getElementById('lineCustomType').value = '';
         } else {
-            sel.value = 'other';
+            selectIpType('other');
             document.getElementById('lineCustomType').value = ipType;
         }
-        toggleIpType();
         if (l.customer_id) {
             document.getElementById('lineCustomerId').value = l.customer_id;
             document.getElementById('customerSearch').value = l.customer_name_rel || l.customer_name || '';
@@ -511,17 +582,12 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
         new bootstrap.Modal(document.getElementById('lineModal')).show();
     }
 
-    // Before submit: merge custom type into ip_type select
-    document.getElementById('lineModal').closest('form')?.addEventListener('submit', function () {
-        const sel = document.getElementById('lineIpType');
-        if (sel.value === 'other') {
+    // Before submit: merge custom type into ip_type hidden input
+    document.getElementById('lineForm')?.addEventListener('submit', function () {
+        const hidden = document.getElementById('lineIpType');
+        if (hidden.value === 'other') {
             const custom = document.getElementById('lineCustomType').value.trim();
-            if (custom) {
-                const opt = document.createElement('option');
-                opt.value = custom;
-                opt.selected = true;
-                sel.appendChild(opt);
-            }
+            if (custom) hidden.value = custom;
         }
     });
 
