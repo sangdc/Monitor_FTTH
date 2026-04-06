@@ -436,15 +436,19 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
     }
 
     function renderPagination() {
-        const rows = getVisibleRows();
+        const allRows = Array.from(document.querySelectorAll('#linesBody tr[data-cid]'));
+        const rows = allRows.filter(r => r.dataset.filtered !== 'true');
         const total = rows.length;
         const bar = document.getElementById('paginationBar');
         const info = document.getElementById('pageInfo');
         const btns = document.getElementById('pageButtons');
         
+        // Hide ALL rows first (including filtered ones)
+        allRows.forEach(r => r.style.display = 'none');
+        
         if (total <= PAGE_SIZE) {
             bar.style.display = 'none';
-            rows.forEach(r => r.style.display = '');
+            rows.forEach((r, i) => { r.style.display = ''; r.querySelector('.rn').textContent = i + 1; });
             return;
         }
         
@@ -457,7 +461,7 @@ $filterCustomers = $pdo->query("SELECT DISTINCT c.id, c.name FROM customers c IN
         
         rows.forEach((r, i) => {
             r.style.display = (i >= start && i < end) ? '' : 'none';
-            if (i >= start && i < end) r.querySelector('.rn').textContent = i + 1;
+            r.querySelector('.rn').textContent = i + 1;
         });
         
         info.textContent = `Hi\u1EC3n ${start+1}-${Math.min(end,total)} / ${total} lines`;
