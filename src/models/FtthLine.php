@@ -112,12 +112,15 @@ class FtthLine {
         $custDir = $logDir . '/' . $sanitize($customerName) . '/' . $sanitize($lineName);
         if (!is_dir($custDir)) @mkdir($custDir, 0755, true);
         $csvFile = $custDir . '/' . date('Y-m-d') . '.csv';
+        clearstatcache(true, $csvFile);
         $isNew = !file_exists($csvFile);
         $fp = @fopen($csvFile, 'a');
         if ($fp) {
             if ($isNew) fputcsv($fp, ['line_id','line_name','ip','status','response_time','message','checked_at']);
             fputcsv($fp, [$id, $lineName, $ip, $status, $responseTime, $message, $now]);
             fclose($fp);
+        } else {
+            error_log("FTTH Log Warning: Cannot open/create file " . $csvFile . ". Please check permissions.");
         }
     }
 

@@ -23,6 +23,7 @@ $setting = new Setting($pdo);
 
 // Track previous statuses for transition detection
 $previousStatuses = [];
+$cyclesCount = 0;
 
 while (true) {
     try {
@@ -119,6 +120,16 @@ while (true) {
         }
 
         echo "[" . date('Y-m-d H:i:s') . "] Cycle done: {$upCount} up, {$downCount} down. Sleeping {$interval}s\n";
+
+        // Free memory explicitly
+        gc_collect_cycles();
+        
+        // Auto-restart gracefully every ~2 hours to clear all memory bounds causing OOM (Exit 137)
+        $cyclesCount++;
+        if ($cyclesCount > 200) { 
+            echo "[" . date('Y-m-d H:i:s') . "] Graceful restart to free memory bounds...\n";
+            exit(0); // With 'restart: unless-stopped', Docker spins it back instantly
+        }
 
     }
     catch (Exception $e) {
